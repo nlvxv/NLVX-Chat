@@ -6,7 +6,6 @@
     <title>NLVX Chat</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        /* CSS is fully correct and polished */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' );
         :root{--primary-color:#007bff;--background-color:#0d1117;--surface-color-1:#161b22;--surface-color-2:#010409;--text-color:#c9d1d9;--text-muted:#8b949e;--border-color:#30363d;--sent-bg:linear-gradient(135deg, #007bff, #0056b3);--received-bg:#21262d;--hover-bg:rgba(255, 255, 255, 0.05);--popover-bg:#2a2f38;--danger-color:#dc3545;}
         *{box-sizing:border-box;}
@@ -29,8 +28,8 @@
         .mobile-nav-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px;}
         .mobile-nav-btn.active{color:var(--primary-color);}
         .mobile-nav-btn svg{width:24px;height:24px;fill:currentColor;}
-        .messages-area{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column-reverse;} /* This is critical for message order */
-        .messages-list{display:flex;flex-direction:column;gap:15px;}
+        .messages-area{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column-reverse;}
+        .messages-list{display:flex;flex-direction:column;gap:15px;margin-top:auto;}
         .message{position:relative;padding:12px 18px;border-radius:20px;max-width:80%;display:flex;flex-direction:column;opacity:0;transform:scale(0.95);animation:messagePopIn 0.3s forwards cubic-bezier(0.4, 1.5, 0.75, 1.25);}
         @keyframes messagePopIn{to{opacity:1;transform:scale(1);}}
         .message .username{font-weight:600;font-size:0.9em;margin-bottom:5px;color:var(--primary-color);cursor:pointer;transition: color 0.2s ease;}
@@ -38,12 +37,6 @@
         .message.sent{background:var(--sent-bg);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
         .message.sent .username{color:rgba(255, 255, 255, 0.8);}
         .message.received{background:var(--received-bg);color:var(--text-color);align-self:flex-start;border-bottom-left-radius:5px;}
-        .message-actions{position:absolute;top:-15px;right:10px;display:none;gap:5px;background-color:var(--popover-bg);padding:5px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.3);}
-        .message.sent:hover .message-actions{display:flex;}
-        .action-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;}
-        .action-btn:hover{color:var(--primary-color);}
-        .action-btn.delete:hover{color:var(--danger-color);}
-        .action-btn svg{width:18px;height:18px;fill:currentColor;}
         .input-area{display:flex;padding:15px 20px;border-top:1px solid var(--border-color);gap:10px;}
         #message-input{flex-grow:1;padding:14px 20px;border:1px solid var(--border-color);background-color:var(--background-color);color:var(--text-color);border-radius:24px;font-size:1em;transition:all 0.3s ease;}
         #message-input:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(0, 123, 255, 0.25);}
@@ -73,7 +66,6 @@
         ::-webkit-scrollbar-track{background:transparent;}
         ::-webkit-scrollbar-thumb{background-color:#444;border-radius:10px;}
         ::-webkit-scrollbar-thumb:hover{background-color:#555;}
-        
         @media (max-width: 768px) {
             .main-layout { grid-template-columns: 1fr; }
             .conversations-sidebar { display: none; }
@@ -82,7 +74,6 @@
             .users-sidebar { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 20; border-left: none; }
             .users-sidebar.visible { transform: translateX(0); }
             .chat-container { width: 100%; height: 100%; }
-            .message.sent:hover .message-actions { display: none; }
             .message .username { pointer-events: none; }
             #back-to-chat-btn { display: block; }
         }
@@ -91,13 +82,10 @@
 <body>
     <div class="main-layout">
         <aside class="conversations-sidebar">
-            <div class="sidebar-header">
-                <h1 class="sidebar-title">NLVX Chat</h1>
-            </div>
+            <div class="sidebar-header"><h1 class="sidebar-title">NLVX Chat</h1></div>
             <div class="conversations-list" id="conversations-list">
                 <div class="conversation-item active" data-channel-id="public-room">
-                    <div class="avatar">P</div>
-                    <div class="conversation-name">Public Room</div>
+                    <div class="avatar">P</div><div class="conversation-name">Public Room</div>
                 </div>
             </div>
         </aside>
@@ -106,200 +94,152 @@
                 <header class="chat-header">
                     <h1 class="sidebar-title">Public Room</h1>
                     <div class="mobile-nav">
-                        <button class="mobile-nav-btn" id="show-users-btn" title="Users">
-                            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg>
-                        </button>
+                        <button class="mobile-nav-btn" id="show-users-btn" title="Users"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg></button>
                     </div>
                 </header>
-                <main class="messages-area" id="messages-area">
-                    <div class="messages-list" id="messages-list"></div>
-                </main>
+                <main class="messages-area" id="messages-area"><div class="messages-list" id="messages-list"></div></main>
                 <footer class="input-area">
-                    <input type="text" id="message-input" placeholder="Message in Public Room...">
-                    <button id="send-button" title="Send">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-                    </button>
+                    <input type="text" id="message-input" placeholder="Message in Public Room..."><button id="send-button" title="Send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg></button>
                 </footer>
             </div>
             <aside class="users-sidebar" id="users-sidebar">
                 <header class="sidebar-header">
-                    <button id="back-to-chat-btn" title="Back to chat">
-                        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
-                    </button>
+                    <button id="back-to-chat-btn" title="Back to chat"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg></button>
                     <h1 class="sidebar-title">Online</h1>
-                </header>
-                <div class="users-list" id="users-list"></div>
+                </header><div class="users-list" id="users-list"></div>
             </aside>
         </main>
     </div>
     <div class="modal-backdrop" id="profile-modal-backdrop">
         <div class="profile-modal" id="profile-modal">
             <header class="modal-header">
-                <div class="avatar modal-avatar" id="modal-avatar"></div>
-                <h2 class="modal-username" id="modal-username"></h2>
+                <div class="avatar modal-avatar" id="modal-avatar"></div><h2 class="modal-username" id="modal-username"></h2>
             </header>
             <div class="modal-body">
-                <div class="info-group">
-                    <label>User ID</label>
-                    <p id="modal-userid"></p>
-                </div>
-                <div class="info-group">
-                    <label>Status</label>
-                    <p>Online</p>
-                </div>
+                <div class="info-group"><label>User ID</label><p id="modal-userid"></p></div>
+                <div class="info-group"><label>Status</label><p>Online</p></div>
             </div>
-            <footer class="modal-footer">
-                <button class="modal-button" id="modal-message-btn">Message</button>
-            </footer>
+            <footer class="modal-footer"><button class="modal-button" id="modal-message-btn">Message</button></footer>
         </div>
     </div>
 
     <script>
     const currentUser = { name: localStorage.getItem('nlvx_username'), id: localStorage.getItem('nlvx_username') };
     if (!currentUser.id) { window.location.href = 'index.html'; }
+
+    const elements = {
+        messagesArea: document.getElementById('messages-area'),
+        messagesList: document.getElementById('messages-list'),
+        messageInput: document.getElementById('message-input'),
+        sendButton: document.getElementById('send-button'),
+        usersListUI: document.getElementById('users-list'),
+        usersSidebar: document.getElementById('users-sidebar'),
+        showUsersBtn: document.getElementById('show-users-btn'),
+        backToChatBtn: document.getElementById('back-to-chat-btn'),
+        profileModalBackdrop: document.getElementById('profile-modal-backdrop'),
+        modalAvatar: document.getElementById('modal-avatar'),
+        modalUsername: document.getElementById('modal-username'),
+        modalUserid: document.getElementById('modal-userid'),
+        modalMessageBtn: document.getElementById('modal-message-btn')
+    };
+
     let activeChannel;
-    let membersList = new Map();
-
-    const messagesArea = document.getElementById('messages-area');
-    const messagesList = document.getElementById('messages-list');
-    const messageInput = document.getElementById('message-input');
-    const sendButton = document.getElementById('send-button');
-    const usersListUI = document.getElementById('users-list');
-    const usersSidebar = document.getElementById('users-sidebar');
-    const showUsersBtn = document.getElementById('show-users-btn');
-    const backToChatBtn = document.getElementById('back-to-chat-btn');
-    const profileModalBackdrop = document.getElementById('profile-modal-backdrop');
-    const modalAvatar = document.getElementById('modal-avatar');
-    const modalUsername = document.getElementById('modal-username');
-    const modalUserid = document.getElementById('modal-userid');
-    const modalMessageBtn = document.getElementById('modal-message-btn');
-
+    let membersMap = new Map();
     const ably = new Ably.Realtime({ key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4', clientId: currentUser.id });
 
     async function setupChannel(channelId) {
-        activeChannel = ably.channels.get(channelId);
-        await activeChannel.subscribe((message) => {
-            if (message.name === 'chat-message') {
-                addMessageUI(message.data, message.id);
-            } else if (message.name === 'delete-message') {
-                const messageToDelete = document.getElementById(message.data.messageId);
-                if (messageToDelete) { messageToDelete.remove(); }
-            }
+        activeChannel = ably.channels.get(`chat:${channelId}`);
+        
+        await activeChannel.subscribe('message', (message) => {
+            addMessageUI(message.data, message.id);
         });
+
         const presence = activeChannel.presence;
-        await presence.subscribe(['enter', 'leave', 'update'], async () => {
-            const members = await presence.get();
-            membersList = new Map(members.map(m => [m.clientId, m.data]));
+        
+        presence.subscribe(['enter', 'leave', 'update'], async () => {
+            const presenceMembers = await presence.get();
+            membersMap.clear();
+            presenceMembers.forEach(member => {
+                membersMap.set(member.clientId, member.data);
+            });
             renderUserList();
         });
+        
         await presence.enter({ name: currentUser.name });
     }
 
     function renderUserList() {
-        usersListUI.innerHTML = '';
-        membersList.forEach((data, id) => {
+        elements.usersListUI.innerHTML = '';
+        membersMap.forEach((data, id) => {
             if (data && data.name) {
-                addUserUI(data.name, id);
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `<div class="avatar">${data.name.charAt(0).toUpperCase()}</div><div class="user-name">${data.name}</div>`;
+                if (id !== currentUser.id) {
+                    userItem.onclick = () => showProfileModal({ id, name: data.name });
+                }
+                elements.usersListUI.appendChild(userItem);
             }
         });
     }
 
     function sendMessage() {
-        const messageText = messageInput.value.trim();
-        if (messageText && activeChannel) {
-            const messageData = { text: messageText, senderName: currentUser.name, senderId: currentUser.id };
-            activeChannel.publish('chat-message', messageData);
-            messageInput.value = '';
-            messageInput.focus();
+        const text = elements.messageInput.value.trim();
+        if (text && activeChannel) {
+            activeChannel.publish('message', { text, sender: currentUser });
+            elements.messageInput.value = '';
+            elements.messageInput.focus();
         }
     }
 
     function addMessageUI(data, messageId) {
-        const isSentByCurrentUser = data.senderId === currentUser.id;
+        const isSent = data.sender.id === currentUser.id;
         const messageDiv = document.createElement('div');
         messageDiv.id = messageId;
-        messageDiv.classList.add('message', isSentByCurrentUser ? 'sent' : 'received');
-        let actionsHTML = '';
-        if (isSentByCurrentUser) {
-            actionsHTML = `<div class="message-actions"><button class="action-btn delete" onclick="deleteMessage('${messageId}')" title="Delete"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button></div>`;
-        }
-        const usernameSpan = `<span class="username" data-user-id="${data.senderId}">${data.senderName}</span>`;
-        messageDiv.innerHTML = `${usernameSpan}<span>${data.text}</span>${actionsHTML}`;
+        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         
-        // **THE FIX FOR MESSAGE ORDER**
-        messagesList.append(messageDiv); // Use append, not prepend
-        messagesArea.scrollTop = messagesArea.scrollHeight; // Scroll to bottom
-    }
-
-    function deleteMessage(messageId) {
-        if (confirm('Are you sure you want to delete this message?')) {
-            activeChannel.publish('delete-message', { messageId: messageId });
-        }
-    }
-
-    function addUserUI(name, id) {
-        const userItem = document.createElement('div');
-        userItem.className = 'user-item';
-        const firstLetter = name ? name.charAt(0).toUpperCase() : '?';
-        userItem.innerHTML = `<div class="avatar">${firstLetter}</div><div class="user-name">${name}</div>`;
-        if (id !== currentUser.id) {
-            userItem.addEventListener('click', () => {
-                showProfileModal({ id, name });
-            });
-        }
-        usersListUI.appendChild(userItem);
+        const usernameHTML = `<span class="username" data-user-id="${data.sender.id}">${data.sender.name}</span>`;
+        messageDiv.innerHTML = `${usernameHTML}<span>${data.text}</span>`;
+        
+        elements.messagesList.append(messageDiv);
+        elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight;
     }
 
     function showProfileModal(user) {
-        modalAvatar.textContent = user.name.charAt(0).toUpperCase();
-        modalUsername.textContent = user.name;
-        modalUserid.textContent = user.id;
-        profileModalBackdrop.classList.add('visible');
+        elements.modalAvatar.textContent = user.name.charAt(0).toUpperCase();
+        elements.modalUsername.textContent = user.name;
+        elements.modalUserid.textContent = user.id;
+        elements.profileModalBackdrop.classList.add('visible');
     }
 
     function hideProfileModal() {
-        profileModalBackdrop.classList.remove('visible');
+        elements.profileModalBackdrop.classList.remove('visible');
     }
 
-    sendButton.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') { event.preventDefault(); sendMessage(); }
-    });
-    
-    // **THE FIX FOR MODAL CLICK**
-    // Use event delegation to handle clicks on dynamically added elements
-    messagesList.addEventListener('click', (event) => {
-        const target = event.target;
-        if (target.classList.contains('username') && target.dataset.userId !== currentUser.id) {
+    // --- EVENT LISTENERS ---
+    elements.sendButton.onclick = sendMessage;
+    elements.messageInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+    elements.showUsersBtn.onclick = () => elements.usersSidebar.classList.add('visible');
+    elements.backToChatBtn.onclick = () => elements.usersSidebar.classList.remove('visible');
+    elements.profileModalBackdrop.onclick = (e) => { if (e.target === elements.profileModalBackdrop) hideProfileModal(); };
+    elements.modalMessageBtn.onclick = () => {
+        alert(`Starting private chat with ${elements.modalUsername.textContent}...`);
+        hideProfileModal();
+    };
+
+    // Event Delegation for clicking usernames in chat
+    elements.messagesList.onclick = (e) => {
+        const target = e.target;
+        if (target.classList.contains('username')) {
             const userId = target.dataset.userId;
-            const user = membersList.get(userId);
-            if (user) {
-                showProfileModal({ id: userId, name: user.name });
+            if (userId !== currentUser.id && membersMap.has(userId)) {
+                showProfileModal({ id: userId, name: membersMap.get(userId).name });
             }
         }
-    });
+    };
 
-    profileModalBackdrop.addEventListener('click', (event) => {
-        if (event.target === profileModalBackdrop) {
-            hideProfileModal();
-        }
-    });
-
-    modalMessageBtn.addEventListener('click', () => {
-        alert(`Starting private chat with ${modalUsername.textContent}... (Functionality coming next!)`);
-        hideProfileModal();
-    });
-
-    showUsersBtn.addEventListener('click', () => usersSidebar.classList.add('visible'));
-    backToChatBtn.addEventListener('click', () => usersSidebar.classList.remove('visible'));
-
-    ably.connection.on('connected', () => {
-        setupChannel('nlvx-chat-final-fix-v1');
-    });
-    ably.connection.on('failed', (error) => {
-        console.error('Ably connection failed:', error);
-        alert('Error: Could not connect to chat service.');
-    });
+    ably.connection.on('connected', () => setupChannel('public-room-stable'));
+    ably.connection.on('failed', (err) => console.error('Ably connection failed:', err));
     </script>
 </body>
 </html>
