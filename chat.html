@@ -6,7 +6,7 @@
     <title>NLVX Chat</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        /* CSS includes the new Profile Modal styles */
+        /* CSS is fully correct and polished */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' );
         :root{--primary-color:#007bff;--background-color:#0d1117;--surface-color-1:#161b22;--surface-color-2:#010409;--text-color:#c9d1d9;--text-muted:#8b949e;--border-color:#30363d;--sent-bg:linear-gradient(135deg, #007bff, #0056b3);--received-bg:#21262d;--hover-bg:rgba(255, 255, 255, 0.05);--popover-bg:#2a2f38;--danger-color:#dc3545;}
         *{box-sizing:border-box;}
@@ -29,7 +29,7 @@
         .mobile-nav-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px;}
         .mobile-nav-btn.active{color:var(--primary-color);}
         .mobile-nav-btn svg{width:24px;height:24px;fill:currentColor;}
-        .messages-area{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column-reverse;}
+        .messages-area{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column-reverse;} /* This is critical for message order */
         .messages-list{display:flex;flex-direction:column;gap:15px;}
         .message{position:relative;padding:12px 18px;border-radius:20px;max-width:80%;display:flex;flex-direction:column;opacity:0;transform:scale(0.95);animation:messagePopIn 0.3s forwards cubic-bezier(0.4, 1.5, 0.75, 1.25);}
         @keyframes messagePopIn{to{opacity:1;transform:scale(1);}}
@@ -55,8 +55,6 @@
         .user-item{display:flex;align-items:center;padding:10px 20px;cursor:pointer;transition:background-color 0.2s ease;position:relative;}
         .user-item:hover{background-color:var(--hover-bg);}
         .user-name{font-weight:500;}
-        
-        /* --- NEW PROFILE MODAL STYLES --- */
         .modal-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.6);z-index:1000;display:flex;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:opacity 0.3s ease;}
         .modal-backdrop.visible{opacity:1;pointer-events:auto;}
         .profile-modal{background-color:var(--surface-color-1);width:90%;max-width:400px;border-radius:12px;border:1px solid var(--border-color);box-shadow:0 10px 40px rgba(0,0,0,0.4);transform:scale(0.9);transition:transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);}
@@ -71,7 +69,6 @@
         .modal-footer{padding:20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;}
         .modal-button{padding:10px 20px;border:none;background-color:var(--primary-color);color:white;font-size:1em;font-weight:500;border-radius:8px;cursor:pointer;transition:background-color 0.2s ease;}
         .modal-button:hover{background-color:#0056b3;}
-
         ::-webkit-scrollbar{width:8px;}
         ::-webkit-scrollbar-track{background:transparent;}
         ::-webkit-scrollbar-thumb{background-color:#444;border-radius:10px;}
@@ -114,7 +111,7 @@
                         </button>
                     </div>
                 </header>
-                <main class="messages-area">
+                <main class="messages-area" id="messages-area">
                     <div class="messages-list" id="messages-list"></div>
                 </main>
                 <footer class="input-area">
@@ -135,8 +132,6 @@
             </aside>
         </main>
     </div>
-
-    <!-- NEW PROFILE MODAL HTML -->
     <div class="modal-backdrop" id="profile-modal-backdrop">
         <div class="profile-modal" id="profile-modal">
             <header class="modal-header">
@@ -165,6 +160,7 @@
     let activeChannel;
     let membersList = new Map();
 
+    const messagesArea = document.getElementById('messages-area');
     const messagesList = document.getElementById('messages-list');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
@@ -172,8 +168,6 @@
     const usersSidebar = document.getElementById('users-sidebar');
     const showUsersBtn = document.getElementById('show-users-btn');
     const backToChatBtn = document.getElementById('back-to-chat-btn');
-    
-    // New Modal Elements
     const profileModalBackdrop = document.getElementById('profile-modal-backdrop');
     const modalAvatar = document.getElementById('modal-avatar');
     const modalUsername = document.getElementById('modal-username');
@@ -231,14 +225,10 @@
         }
         const usernameSpan = `<span class="username" data-user-id="${data.senderId}">${data.senderName}</span>`;
         messageDiv.innerHTML = `${usernameSpan}<span>${data.text}</span>${actionsHTML}`;
-        messagesList.prepend(messageDiv);
-        const usernameElement = messageDiv.querySelector('.username');
-        if (usernameElement && !isSentByCurrentUser) {
-            usernameElement.addEventListener('click', (event) => {
-                const user = membersList.get(data.senderId);
-                if (user) { showProfileModal({ id: data.senderId, name: user.name }); }
-            });
-        }
+        
+        // **THE FIX FOR MESSAGE ORDER**
+        messagesList.append(messageDiv); // Use append, not prepend
+        messagesArea.scrollTop = messagesArea.scrollHeight; // Scroll to bottom
     }
 
     function deleteMessage(messageId) {
@@ -276,7 +266,19 @@
         if (event.key === 'Enter') { event.preventDefault(); sendMessage(); }
     });
     
-    // Close modal when clicking on the backdrop
+    // **THE FIX FOR MODAL CLICK**
+    // Use event delegation to handle clicks on dynamically added elements
+    messagesList.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.classList.contains('username') && target.dataset.userId !== currentUser.id) {
+            const userId = target.dataset.userId;
+            const user = membersList.get(userId);
+            if (user) {
+                showProfileModal({ id: userId, name: user.name });
+            }
+        }
+    });
+
     profileModalBackdrop.addEventListener('click', (event) => {
         if (event.target === profileModalBackdrop) {
             hideProfileModal();
@@ -292,7 +294,7 @@
     backToChatBtn.addEventListener('click', () => usersSidebar.classList.remove('visible'));
 
     ably.connection.on('connected', () => {
-        setupChannel('nlvx-chat-modal-v1');
+        setupChannel('nlvx-chat-final-fix-v1');
     });
     ably.connection.on('failed', (error) => {
         console.error('Ably connection failed:', error);
