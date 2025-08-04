@@ -3,243 +3,766 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NLVX Chat</title>
+    <title>NLVX Chat - The Universe Awaits</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' );
-        :root{--primary-color:#007bff;--background-color:#0d1117;--surface-color-1:#161b22;--surface-color-2:#010409;--text-color:#c9d1d9;--text-muted:#8b949e;--border-color:#30363d;--sent-bg:linear-gradient(135deg, #007bff, #0056b3);--received-bg:#21262d;--hover-bg:rgba(255, 255, 255, 0.05);--popover-bg:#2a2f38;--danger-color:#dc3545;}
-        *{box-sizing:border-box;}
-        body{font-family:'Poppins',sans-serif;background-color:var(--background-color);color:var(--text-color);margin:0;height:100vh;overflow:hidden;}
-        .main-layout{display:grid;grid-template-columns:240px 1fr;height:100vh;}
-        .conversations-sidebar{background-color:var(--surface-color-2);display:flex;flex-direction:column;border-right:1px solid var(--border-color);}
-        .sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;height:65px;font-size:1.2em;font-weight:600;border-bottom:1px solid var(--border-color);color:#fff;}
-        .sidebar-title{margin:0;}
-        #back-to-chat-btn{display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px;}
-        #back-to-chat-btn svg{width:24px;height:24px;fill:currentColor;}
-        .conversations-list{flex-grow:1;overflow-y:auto;padding:10px 0;}
-        .conversation-item{display:flex;align-items:center;padding:12px 20px;cursor:pointer;transition:background-color 0.2s ease;user-select:none;}
-        .conversation-item.active,.conversation-item:hover{background-color:var(--hover-bg);}
-        .avatar{width:40px;height:40px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2em;margin-right:12px;flex-shrink:0;}
-        .conversation-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .chat-view{display:grid;grid-template-columns:1fr 240px;height:100vh;}
-        .chat-container{display:flex;flex-direction:column;height:100%;background-color:var(--surface-color-1);}
-        .chat-header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;height:65px;border-bottom:1px solid var(--border-color);font-size:1.2em;font-weight:600;color:#fff;z-index:10;}
-        .mobile-nav{display:none;gap:15px;}
-        .mobile-nav-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px;}
-        .mobile-nav-btn.active{color:var(--primary-color);}
-        .mobile-nav-btn svg{width:24px;height:24px;fill:currentColor;}
-        .messages-area{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column-reverse;}
-        .messages-list{display:flex;flex-direction:column;gap:15px;margin-top:auto;}
-        .message{position:relative;padding:12px 18px;border-radius:20px;max-width:80%;display:flex;flex-direction:column;opacity:0;transform:scale(0.95);animation:messagePopIn 0.3s forwards cubic-bezier(0.4, 1.5, 0.75, 1.25);}
-        @keyframes messagePopIn{to{opacity:1;transform:scale(1);}}
-        .message .username{font-weight:600;font-size:0.9em;margin-bottom:5px;color:var(--primary-color);cursor:pointer;transition: color 0.2s ease;}
-        .message .username:hover{color:#3caeff;}
-        .message.sent{background:var(--sent-bg);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
-        .message.sent .username{color:rgba(255, 255, 255, 0.8);}
-        .message.received{background:var(--received-bg);color:var(--text-color);align-self:flex-start;border-bottom-left-radius:5px;}
-        .input-area{display:flex;padding:15px 20px;border-top:1px solid var(--border-color);gap:10px;}
-        #message-input{flex-grow:1;padding:14px 20px;border:1px solid var(--border-color);background-color:var(--background-color);color:var(--text-color);border-radius:24px;font-size:1em;transition:all 0.3s ease;}
-        #message-input:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(0, 123, 255, 0.25);}
-        #send-button{display:flex;align-items:center;justify-content:center;width:50px;height:50px;border:none;background-color:var(--primary-color);color:white;border-radius:50%;cursor:pointer;transition:all 0.3s ease;flex-shrink:0;}
-        #send-button:hover{background-color:#0056b3;transform:rotate(15deg) scale(1.1);}
-        #send-button svg{width:24px;height:24px;}
-        .users-sidebar{background-color:var(--surface-color-2);border-left:1px solid var(--border-color);display:flex;flex-direction:column;}
-        .users-list{flex-grow:1;overflow-y:auto;padding:10px 0;}
-        .user-item{display:flex;align-items:center;padding:10px 20px;cursor:pointer;transition:background-color 0.2s ease;position:relative;}
-        .user-item:hover{background-color:var(--hover-bg);}
-        .user-name{font-weight:500;}
-        .modal-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.6);z-index:1000;display:flex;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:opacity 0.3s ease;}
-        .modal-backdrop.visible{opacity:1;pointer-events:auto;}
-        .profile-modal{background-color:var(--surface-color-1);width:90%;max-width:400px;border-radius:12px;border:1px solid var(--border-color);box-shadow:0 10px 40px rgba(0,0,0,0.4);transform:scale(0.9);transition:transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);}
-        .modal-backdrop.visible .profile-modal{transform:scale(1);}
-        .modal-header{padding:20px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:20px;}
-        .modal-avatar{width:80px;height:80px;font-size:3em;border-radius:50%;}
-        .modal-username{font-size:1.8em;font-weight:600;color:#fff;}
-        .modal-body{padding:20px;}
-        .info-group{margin-bottom:15px;}
-        .info-group label{display:block;font-size:0.9em;color:var(--text-muted);margin-bottom:5px;}
-        .info-group p{font-size:1.1em;color:var(--text-color);}
-        .modal-footer{padding:20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;}
-        .modal-button{padding:10px 20px;border:none;background-color:var(--primary-color);color:white;font-size:1em;font-weight:500;border-radius:8px;cursor:pointer;transition:background-color 0.2s ease;}
-        .modal-button:hover{background-color:#0056b3;}
-        ::-webkit-scrollbar{width:8px;}
-        ::-webkit-scrollbar-track{background:transparent;}
-        ::-webkit-scrollbar-thumb{background-color:#444;border-radius:10px;}
-        ::-webkit-scrollbar-thumb:hover{background-color:#555;}
-        @media (max-width: 768px) {
-            .main-layout { grid-template-columns: 1fr; }
-            .conversations-sidebar { display: none; }
-            .chat-view { grid-template-columns: 1fr; position: relative; overflow: hidden; }
-            .mobile-nav { display: flex; }
-            .users-sidebar { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 20; border-left: none; }
-            .users-sidebar.visible { transform: translateX(0); }
-            .chat-container { width: 100%; height: 100%; }
-            .message .username { pointer-events: none; }
-            #back-to-chat-btn { display: block; }
+        :root {
+            --primary-color: #e53e3e; 
+            --secondary-color: #b91c1c;
+            --background-color: #0a0213;
+            --surface-primary: #12071f;
+            --surface-secondary: #1a0d2e;
+            --text-primary: #f0e8ff;
+            --text-secondary: #bca9d4;
+            --card-background: rgba(22, 13, 46, 0.5 );
+            --card-border: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(229, 62, 62, 0.4);
+            --online-color: #28a745;
+            
+            --font-main: 'Inter', sans-serif;
+            --border-radius: 16px;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #background-stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .main-layout { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
+
+        /* --- Sidebars --- */
+        .sidebar { background-color: var(--surface-primary); display: flex; flex-direction: column; padding: 16px; }
+        .conversations-sidebar { border-right: 1px solid var(--card-border); }
+        .users-sidebar { border-left: 1px solid var(--card-border); }
+        .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 8px; margin-bottom: 12px; flex-shrink: 0; }
+        .sidebar-title { font-size: 1.4em; font-weight: 800; }
+        .sidebar-title span { font-weight: 500; color: var(--text-secondary); }
+        #add-room-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.3s ease; }
+        #add-room-btn:hover { background-color: var(--card-background); color: var(--primary-color); transform: rotate(90deg); }
+        .sidebar-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-footer { padding-top: 16px; border-top: 1px solid var(--card-border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .sidebar-footer .avatar { width: 40px; height: 40px; font-size: 1em; margin: 0; }
+        .sidebar-footer .user-name { font-weight: 600; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #settings-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.3s ease; }
+        #settings-btn:hover { background-color: var(--card-background); color: var(--text-primary); transform: rotate(45deg); }
+
+        /* --- List Items --- */
+        .list-item { display: flex; align-items: center; padding: 12px; cursor: pointer; user-select: none; position: relative; border-radius: 12px; border: 1px solid transparent; transition: all 0.3s ease; }
+        .list-item:hover { background-color: var(--card-background); border-color: var(--card-border); }
+        .list-item.active { background: linear-gradient(90deg, var(--secondary-color), var(--primary-color)); box-shadow: 0 4px 20px var(--glow-color); }
+        .list-item.active .list-item-snippet, .list-item.active .list-item-name { color: var(--text-primary); }
+        .avatar {
+            width: 48px; height: 48px; border-radius: 50%; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.4em; margin-right: 12px;
+            flex-shrink: 0; border: 2px solid rgba(255,255,255,0.2);
+            background-size: cover; background-position: center;
+        }
+        .list-item-details { flex-grow: 1; overflow: hidden; }
+        .list-item-name { font-weight: 600; font-size: 1em; }
+        .list-item-snippet { font-size: 0.85em; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-badge { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background-color: var(--primary-color); color: white; font-size: 0.75em; font-weight: bold; padding: 2px 8px; border-radius: 12px; }
+
+        /* --- Chat View --- */
+        .chat-view { display: grid; grid-template-columns: 1fr 280px; height: 100vh; }
+        .chat-container { display: flex; flex-direction: column; height: 100%; background: var(--background-color); }
+        .chat-header { display: flex; align-items: center; padding: 0 24px; height: 70px; border-bottom: 1px solid var(--card-border); z-index: 10; gap: 15px; position: relative; }
+        .chat-header .sidebar-title { font-size: 1.2em; flex-grow: 1; }
+        .messages-area { flex-grow: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
+        .messages-list { display: flex; flex-direction: column; gap: 4px; margin-top: auto; }
+        
+        /* --- Message Styling (Final Polish) --- */
+        .message { display: flex; align-items: flex-start; gap: 12px; max-width: 75%; opacity: 0; transform: translateY(15px); animation: messageFadeIn 0.5s forwards; position: relative; padding: 8px 12px; border-radius: 12px; transition: background-color 0.2s; }
+        @keyframes messageFadeIn { to { opacity: 1; transform: translateY(0); } }
+        .message:hover { background-color: var(--surface-primary); }
+        .message:hover .message-actions { opacity: 1; transform: translateY(-50%) scale(1); }
+        .message.sent { align-self: flex-end; flex-direction: row-reverse; }
+        .message .avatar { width: 40px; height: 40px; font-size: 1em; }
+        .message-body { display: flex; flex-direction: column; align-items: flex-start; }
+        .message.sent .message-body { align-items: flex-end; }
+        .message-content { padding: 10px 14px; border-radius: var(--border-radius); background: var(--surface-secondary); border: 1px solid var(--card-border); }
+        .message.sent .message-content { background: var(--primary-color); border: none; color: white; }
+        .message.received .message-content { border-top-left-radius: 4px; }
+        .message.sent .message-content { border-top-right-radius: 4px; }
+        .message .username { font-weight: 600; font-size: 1em; margin-bottom: 6px; }
+        .message-text { font-size: 1em; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; }
+        .message-text a { color: #63b3ed; text-decoration: underline; }
+        .message-actions { position: absolute; top: 50%; right: -5px; transform: translateY(-50%) scale(0.8); background-color: var(--surface-primary); border-radius: 8px; border: 1px solid var(--card-border); display: flex; gap: 4px; padding: 4px; opacity: 0; transition: all 0.2s; z-index: 5; }
+        .message.sent .message-actions { right: auto; left: -5px; }
+        .message-actions button { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; }
+        .message-actions button:hover { color: var(--text-primary); }
+        
+        /* --- Input Area --- */
+        .input-area { padding: 16px 24px; border-top: 1px solid var(--card-border); }
+        .typing-indicator { height: 20px; font-size: 0.85em; color: var(--text-secondary); padding-left: 10px; margin-bottom: 8px; font-style: italic; }
+        .input-controls { display: flex; gap: 12px; align-items: center; background-color: var(--surface-primary); padding: 8px; border-radius: 50px; border: 1px solid var(--card-border); }
+        #message-input { flex-grow: 1; border: none; background-color: transparent; color: var(--text-primary); font-size: 1em; padding: 10px 12px; font-family: var(--font-main); }
+        #message-input:focus { outline: none; }
+        #send-button { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: none; background: var(--primary-color); color: white; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; flex-shrink: 0; box-shadow: 0 2px 15px var(--glow-color); }
+        #send-button:hover { transform: scale(1.1) rotate(15deg); box-shadow: 0 4px 20px var(--glow-color); }
+        
+        /* --- Modals --- */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(10, 2, 19, 0.7); backdrop-filter: blur(10px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+        .modal-backdrop.visible { opacity: 1; pointer-events: auto; }
+        .modal { background: var(--card-background); border: 1px solid var(--card-border); width: 90%; max-width: 420px; border-radius: var(--border-radius); box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3); transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.2, 1.5, 0.5, 1); }
+        .modal-backdrop.visible .modal { transform: scale(1); }
+        .modal-header { padding: 24px; text-align: center; border-bottom: 1px solid var(--card-border); }
+        .modal-title { font-size: 1.5em; font-weight: 700; margin-bottom: 8px; }
+        .modal-subtitle { font-size: 1em; color: var(--text-secondary); }
+        .modal-body { padding: 24px; }
+        .info-group { margin-bottom: 20px; }
+        .info-group label { display: block; font-size: 0.8em; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .info-group p, .info-group input, .info-group select { font-size: 1em; color: var(--text-primary); background-color: var(--surface-primary); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; width: 100%; }
+        .info-group input:focus, .info-group select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 15px var(--glow-color); }
+        .color-picker { display: flex; gap: 12px; margin-top: 10px; justify-content: center; }
+        .color-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; }
+        .color-swatch.selected { border-color: white; transform: scale(1.15); }
+        .modal-footer { padding: 24px; border-top: 1px solid var(--card-border); display: flex; justify-content: flex-end; gap: 12px; }
+        .modal-button { padding: 10px 20px; border: none; font-size: 0.95em; font-weight: 600; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; }
+        .modal-button:hover { transform: scale(1.05); }
+        .modal-button.secondary { background-color: var(--surface-secondary); color: var(--text-primary); }
+        .modal-button.primary { background: var(--primary-color); color: var(--text-primary); box-shadow: 0 2px 15px var(--glow-color); }
+        
+        /* --- Dropdown Menu --- */
+        .dropdown { position: relative; }
+        #chat-menu-btn { background: none; border: 1px solid transparent; color: var(--text-secondary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
+        #chat-menu-btn:hover { background-color: var(--surface-secondary); border-color: var(--card-border); }
+        .dropdown-menu { position: absolute; top: calc(100% + 8px); right: 0; background-color: var(--surface-primary); border: 1px solid var(--card-border); border-radius: 10px; padding: 8px; z-index: 100; min-width: 180px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s ease; }
+        .dropdown-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-item { background: none; border: none; color: var(--text-secondary); padding: 10px 12px; width: 100%; text-align: left; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .dropdown-item:hover { background-color: var(--card-background); color: var(--text-primary); }
+        .dropdown-item.danger:hover { color: var(--primary-color); }
+
+        /* --- Users & Room Modals Tabs --- */
+        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; }
+        .tab-btn { flex: 1; background: none; border: none; color: var(--text-secondary); padding: 12px; font-size: 1em; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s ease; }
+        .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--primary-color); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .empty-list-message { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
+        .status-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-secondary); margin-left: auto; }
+        .status-indicator.online { background-color: var(--online-color); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
+    <canvas id="background-stars"></canvas>
+    
     <div class="main-layout">
-        <aside class="conversations-sidebar">
-            <div class="sidebar-header"><h1 class="sidebar-title">NLVX Chat</h1></div>
-            <div class="conversations-list" id="conversations-list">
-                <div class="conversation-item active" data-channel-id="public-room">
-                    <div class="avatar">P</div><div class="conversation-name">Public Room</div>
-                </div>
+        <aside class="conversations-sidebar sidebar">
+            <div class="sidebar-header">
+                <h1 class="sidebar-title">NLVX <span>Chat</span></h1>
+                <button id="add-room-btn" title="Create or Join Room">
+                    <svg fill="currentColor" viewBox="0 0 20 20" width="20" height="20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+            <div class="sidebar-list" id="conversations-list"></div>
+            <div class="sidebar-footer">
+                <div class="avatar" id="sidebar-avatar"></div>
+                <span class="user-name" id="sidebar-username"></span>
+                <button id="settings-btn" title="Settings">
+                    <svg fill="currentColor" viewBox="0 0 20 20" width="20" height="20"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z"></path></svg>
+                </button>
             </div>
         </aside>
         <main class="chat-view">
             <div class="chat-container" id="chat-container">
                 <header class="chat-header">
-                    <h1 class="sidebar-title">Public Room</h1>
-                    <div class="mobile-nav">
-                        <button class="mobile-nav-btn" id="show-users-btn" title="Users"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg></button>
+                    <div class="avatar" id="chat-header-avatar"></div>
+                    <h1 class="sidebar-title" id="chat-header-title"></h1>
+                    <div class="dropdown" id="chat-actions-dropdown" style="margin-left: auto;">
+                        <button id="chat-menu-btn">
+                            <svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="2.5"></circle><circle cx="19" cy="12" r="2.5"></circle><circle cx="5" cy="12" r="2.5"></circle></svg>
+                        </button>
+                        <div class="dropdown-menu" id="chat-dropdown-menu">
+                            <button class="dropdown-item danger" id="leave-chat-btn">
+                                <svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path></svg>
+                                <span>Leave Chat</span>
+                            </button>
+                        </div>
                     </div>
                 </header>
                 <main class="messages-area" id="messages-area"><div class="messages-list" id="messages-list"></div></main>
                 <footer class="input-area">
-                    <input type="text" id="message-input" placeholder="Message in Public Room..."><button id="send-button" title="Send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg></button>
+                    <div class="typing-indicator" id="typing-indicator"></div>
+                    <div class="input-controls">
+                        <input type="text" id="message-input" placeholder="Message...">
+                        <button id="send-button" title="Send"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg></button>
+                    </div>
                 </footer>
             </div>
-            <aside class="users-sidebar" id="users-sidebar">
-                <header class="sidebar-header">
-                    <button id="back-to-chat-btn" title="Back to chat"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg></button>
-                    <h1 class="sidebar-title">Online</h1>
-                </header><div class="users-list" id="users-list"></div>
+            <aside class="users-sidebar sidebar">
+                <div class="sidebar-tabs">
+                    <button class="tab-btn active" data-tab="online-list">Online</button>
+                    <button class="tab-btn" data-tab="friends-list">Friends</button>
+                </div>
+                <div class="sidebar-list" id="online-list"></div>
+                <div class="sidebar-list" id="friends-list" style="display: none;"></div>
             </aside>
         </main>
     </div>
-    <div class="modal-backdrop" id="profile-modal-backdrop">
-        <div class="profile-modal" id="profile-modal">
-            <header class="modal-header">
-                <div class="avatar modal-avatar" id="modal-avatar"></div><h2 class="modal-username" id="modal-username"></h2>
-            </header>
-            <div class="modal-body">
-                <div class="info-group"><label>User ID</label><p id="modal-userid"></p></div>
-                <div class="info-group"><label>Status</label><p>Online</p></div>
-            </div>
-            <footer class="modal-footer"><button class="modal-button" id="modal-message-btn">Message</button></footer>
-        </div>
-    </div>
+
+    <!-- Modals -->
+    <div class="modal-backdrop" id="room-modal-backdrop"></div>
+    <div class="modal-backdrop" id="settings-modal-backdrop"></div>
+    <div class="modal-backdrop" id="user-profile-modal-backdrop"></div>
 
     <script>
-    const currentUser = { name: localStorage.getItem('nlvx_username'), id: localStorage.getItem('nlvx_username') };
-    if (!currentUser.id) { window.location.href = 'index.html'; }
+    // Star background animation
+    const canvas = document.getElementById('background-stars');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let stars = [];
+    for (let i = 0; i < 150; i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, radius: Math.random() * 1.5, alpha: Math.random(), vx: (Math.random() - 0.5) * 0.1, vy: (Math.random() - 0.5) * 0.1 }); }
+    function animateStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(star => {
+            star.x += star.vx; star.y += star.vy;
+            if (star.x < 0 || star.x > canvas.width) star.vx = -star.vx;
+            if (star.y < 0 || star.y > canvas.height) star.vy = -star.vy;
+            star.alpha += 0.01 * (Math.random() > 0.5 ? 1 : -1);
+            if (star.alpha < 0) star.alpha = 0; if (star.alpha > 1) star.alpha = 1;
+            ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(240, 232, 255, ${star.alpha})`; ctx.fill();
+        });
+        requestAnimationFrame(animateStars);
+    }
+    animateStars();
+    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+    // --- Main App Logic ---
+    const savedUsername = localStorage.getItem('nlvx_username');
+    let userId = localStorage.getItem('nlvx_userid');
+    if (!savedUsername) { window.location.href = 'index.html'; }
+    if (!userId) {
+        userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('nlvx_userid', userId);
+    }
+    const myColor = localStorage.getItem('nlvx_usercolor') || '#e53e3e';
+
+    const currentUser = { name: savedUsername, id: userId, color: myColor };
+    
+    const ably = new Ably.Realtime({ key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4', clientId: currentUser.id });
 
     const elements = {
+        conversationsList: document.getElementById('conversations-list'),
+        onlineList: document.getElementById('online-list'),
+        friendsList: document.getElementById('friends-list'),
+        chatHeaderAvatar: document.getElementById('chat-header-avatar'),
+        chatHeaderTitle: document.getElementById('chat-header-title'),
         messagesArea: document.getElementById('messages-area'),
         messagesList: document.getElementById('messages-list'),
         messageInput: document.getElementById('message-input'),
         sendButton: document.getElementById('send-button'),
-        usersListUI: document.getElementById('users-list'),
-        usersSidebar: document.getElementById('users-sidebar'),
-        showUsersBtn: document.getElementById('show-users-btn'),
-        backToChatBtn: document.getElementById('back-to-chat-btn'),
-        profileModalBackdrop: document.getElementById('profile-modal-backdrop'),
-        modalAvatar: document.getElementById('modal-avatar'),
-        modalUsername: document.getElementById('modal-username'),
-        modalUserid: document.getElementById('modal-userid'),
-        modalMessageBtn: document.getElementById('modal-message-btn')
+        sidebarAvatar: document.getElementById('sidebar-avatar'),
+        sidebarUsername: document.getElementById('sidebar-username'),
+        addRoomBtn: document.getElementById('add-room-btn'),
+        settingsBtn: document.getElementById('settings-btn'),
+        roomModalBackdrop: document.getElementById('room-modal-backdrop'),
+        settingsModalBackdrop: document.getElementById('settings-modal-backdrop'),
+        userProfileModalBackdrop: document.getElementById('user-profile-modal-backdrop'),
+        typingIndicator: document.getElementById('typing-indicator'),
+        chatActionsDropdown: document.getElementById('chat-actions-dropdown'),
+        chatMenuBtn: document.getElementById('chat-menu-btn'),
+        chatDropdownMenu: document.getElementById('chat-dropdown-menu'),
+        leaveChatBtn: document.getElementById('leave-chat-btn'),
+        sidebarTabs: document.querySelector('.users-sidebar .sidebar-tabs'),
     };
 
-    let activeChannel;
+    // Inject modal HTML
+    const roomIcons = {
+        '🌍': 'Globe', '💬': 'Chat', '🎉': 'Party', '🎮': 'Gaming', '🎵': 'Music', 
+        '🎨': 'Art', '💼': 'Work', '💡': 'Ideas', '🔥': 'Trending', '🚀': 'Projects'
+    };
+    elements.roomModalBackdrop.innerHTML = `<div class="modal" id="room-modal">
+        <div class="modal-header sidebar-tabs" style="margin-bottom: 0; padding: 0 24px;">
+            <button class="tab-btn active" data-tab="create-room-tab">Create Room</button>
+            <button class="tab-btn" data-tab="join-room-tab">Join Room</button>
+        </div>
+        <div class="modal-body">
+            <div id="create-room-tab" class="tab-content active">
+                <div class="info-group"><label for="create-room-name">Room Name</label><input type="text" id="create-room-name" placeholder="My Awesome Room"></div>
+                <div class="info-group"><label for="create-room-pass">Create Password</label><input type="password" id="create-room-pass" placeholder="Keep it secret, keep it safe!"></div>
+                <div class="info-group"><label for="create-room-icon">Room Icon</label><select id="create-room-icon">${Object.entries(roomIcons).map(([i, n]) => `<option value="${i}">${i} ${n}</option>`).join('')}</select></div>
+                <button class="modal-button primary" id="create-room-btn" style="width:100%;">Create New Room</button>
+            </div>
+            <div id="join-room-tab" class="tab-content">
+                <div class="info-group"><label for="join-room-name">Room Name</label><input type="text" id="join-room-name" placeholder="Enter exact room name"></div>
+                <div class="info-group"><label for="join-room-pass">Password</label><input type="password" id="join-room-pass" placeholder="Enter room password"></div>
+                <button class="modal-button primary" id="join-room-btn" style="width:100%;">Join Room</button>
+            </div>
+        </div>
+    </div>`;
+    elements.settingsModalBackdrop.innerHTML = `<div class="modal" id="settings-modal"><div class="modal-header"><h2 class="modal-title">Settings</h2><p class="modal-subtitle">Customize your profile.</p></div><div class="modal-body"><div class="info-group"><label for="my-username-input">Username</label><input id="my-username-input" type="text"></div><div class="info-group"><label>Avatar Color</label><div class="color-picker" id="color-picker"></div></div></div><footer class="modal-footer"><button class="modal-button secondary" id="settings-close-btn">Close</button><button class="modal-button primary" id="settings-save-btn">Save</button></footer></div>`;
+    elements.settingsModalBackdrop.innerHTML = `<div class="modal" id="settings-modal"><div class="modal-header"><h2 class="modal-title">Settings</h2><p class="modal-subtitle">Customize your profile.</p></div><div class="modal-body"><div class="info-group"><label for="my-username-input">Username</label><input id="my-username-input" type="text"></div><div class="info-group"><label>Avatar Color</label><div class="color-picker" id="color-picker"></div></div></div><footer class="modal-footer"><button class="modal-button secondary" id="settings-close-btn">Close</button><button class="modal-button primary" id="settings-save-btn">Save</button></footer></div>`;
+    elements.userProfileModalBackdrop.innerHTML = `<div class="modal" id="user-profile-modal"><div class="modal-header" style="padding-bottom: 0;"><div class="avatar" id="profile-modal-avatar" style="width: 80px; height: 80px; font-size: 2.5em; margin: -64px auto 16px; border-width: 4px;"></div><h2 class="modal-title" id="profile-modal-username"></h2></div><div class="modal-body" id="profile-modal-body" style="padding-top: 16px;"></div></div>`;
+
+    // Re-assign elements created dynamically
+    Object.assign(elements, {
+        createRoomNameInput: document.getElementById('create-room-name'),
+        createRoomPassInput: document.getElementById('create-room-pass'),
+        createRoomIconSelect: document.getElementById('create-room-icon'),
+        createRoomBtn: document.getElementById('create-room-btn'),
+        joinRoomNameInput: document.getElementById('join-room-name'),
+        joinRoomPassInput: document.getElementById('join-room-pass'),
+        joinRoomBtn: document.getElementById('join-room-btn'),
+        myUsernameInput: document.getElementById('my-username-input'),
+        colorPicker: document.getElementById('color-picker'),
+        settingsCloseBtn: document.getElementById('settings-close-btn'),
+        settingsSaveBtn: document.getElementById('settings-save-btn'),
+        profileModalAvatar: document.getElementById('profile-modal-avatar'),
+        profileModalUsername: document.getElementById('profile-modal-username'),
+        profileModalBody: document.getElementById('profile-modal-body'),
+    });
+
+    let activeChannelId = 'public-room';
+    let channels = new Map();
     let membersMap = new Map();
-    const ably = new Ably.Realtime({ key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4', clientId: currentUser.id });
+    let conversations = new Map();
+    let friends = new Map();
+    let typingTimeout;
+
+    function saveState() {
+        const state = {
+            conversations: Array.from(conversations.entries()),
+            friends: Array.from(friends.entries())
+        };
+        localStorage.setItem('nlvx_state', JSON.stringify(state));
+    }
+
+    function loadState() {
+        const state = JSON.parse(localStorage.getItem('nlvx_state') || '{}');
+        conversations = new Map(state.conversations || []);
+        friends = new Map(state.friends || []);
+        if (!conversations.has('public-room')) {
+            conversations.set('public-room', { id: 'public-room', name: 'Public Room', lastMessage: 'Welcome to the global chat!', unread: 0, user: { name: 'Public', icon: '🌍', isRoom: true }, timestamp: 0 });
+        }
+    }
+
+    function updateSidebarProfile() {
+        const avatar = createAvatar(currentUser);
+        elements.sidebarAvatar.style.backgroundImage = avatar.style.backgroundImage;
+        elements.sidebarAvatar.style.background = avatar.style.background;
+        elements.sidebarAvatar.textContent = avatar.textContent;
+        elements.sidebarUsername.textContent = currentUser.name;
+    }
+
+    function createAvatar(user) {
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        if (user.isRoom) {
+            avatar.textContent = user.icon || '💬';
+            avatar.style.background = 'var(--surface-secondary)';
+        } else {
+            avatar.textContent = user.name.charAt(0).toUpperCase();
+            avatar.style.background = user.color || 'var(--primary-color)';
+        }
+        return avatar;
+    }
+
+    function renderConversations() {
+        elements.conversationsList.innerHTML = '';
+        const sortedConversations = Array.from(conversations.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        sortedConversations.forEach(conv => {
+            const item = document.createElement('div');
+            item.className = `list-item ${conv.id === activeChannelId ? 'active' : ''}`;
+            item.onclick = () => switchChannel(conv.id);
+            
+            const avatar = createAvatar(conv.user);
+            const details = document.createElement('div');
+            details.className = 'list-item-details';
+            details.innerHTML = `<div class="list-item-name">${conv.name}</div><div class="list-item-snippet">${conv.lastMessage}</div>`;
+            
+            item.append(avatar, details);
+            if (conv.unread > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'unread-badge';
+                badge.textContent = conv.unread;
+                item.appendChild(badge);
+            }
+            elements.conversationsList.appendChild(item);
+        });
+    }
+
+    function renderUserLists() {
+        elements.onlineList.innerHTML = '';
+        elements.friendsList.innerHTML = '';
+
+        const onlineMembers = Array.from(membersMap.values()).filter(m => m.id !== currentUser.id);
+        if (onlineMembers.length > 0) {
+            onlineMembers.forEach(user => elements.onlineList.appendChild(createUserListItem(user, true)));
+        } else {
+            elements.onlineList.innerHTML = `<div class="empty-list-message">It's quiet... too quiet.</div>`;
+        }
+
+        const friendMembers = Array.from(friends.values());
+        if (friendMembers.length > 0) {
+            friendMembers.forEach(user => elements.friendsList.appendChild(createUserListItem(user, membersMap.has(user.id))));
+        } else {
+            elements.friendsList.innerHTML = `<div class="empty-list-message">Find friends in the Online tab!</div>`;
+        }
+    }
+
+    function createUserListItem(user, isOnline) {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.onclick = () => showUserProfileModal(user);
+        const avatar = createAvatar(user);
+        const details = document.createElement('div');
+        details.className = 'list-item-details';
+        details.innerHTML = `<div class="list-item-name">${user.name}</div>`;
+        const status = document.createElement('div');
+        status.className = `status-indicator ${isOnline ? 'online' : ''}`;
+        item.append(avatar, details, status);
+        return item;
+    }
+
+    async function switchChannel(channelId) {
+        if (activeChannelId && channels.has(activeChannelId)) {
+            await channels.get(activeChannelId).detach();
+        }
+        activeChannelId = channelId;
+        elements.messagesList.innerHTML = '';
+        const conv = conversations.get(channelId);
+        if (conv) {
+            const headerAvatar = createAvatar(conv.user);
+            elements.chatHeaderAvatar.style.backgroundImage = headerAvatar.style.backgroundImage;
+            elements.chatHeaderAvatar.style.background = headerAvatar.style.background;
+            elements.chatHeaderAvatar.textContent = headerAvatar.textContent;
+            elements.chatHeaderTitle.textContent = conv.name;
+            elements.messageInput.placeholder = `Message in ${conv.name}...`;
+            conv.unread = 0;
+        }
+        renderConversations();
+        loadMessages(channelId);
+        await setupChannel(channelId);
+    }
 
     async function setupChannel(channelId) {
-        activeChannel = ably.channels.get(`chat:${channelId}`);
-        
-        await activeChannel.subscribe('message', (message) => {
-            addMessageUI(message.data, message.id);
+        if (channels.has(channelId)) {
+            await channels.get(channelId).attach();
+            return;
+        }
+        const channel = ably.channels.get(`chat:${channelId}`);
+        channels.set(channelId, channel);
+
+        channel.subscribe('message', (msg) => {
+            const conv = conversations.get(channelId);
+            if (conv) {
+                conv.lastMessage = msg.data.text;
+                conv.timestamp = Date.now();
+                saveState();
+            }
+            saveMessage(channelId, msg.data);
+            addMessageUI(msg.data, channelId);
+        });
+        channel.subscribe('delete_message', (msg) => {
+            document.getElementById(msg.data.messageId)?.remove();
+        });
+        channel.subscribe('edit_message', (msg) => {
+            const messageText = document.querySelector(`#${msg.data.messageId} .message-text`);
+            if (messageText) messageText.innerHTML = linkify(msg.data.newText);
         });
 
-        const presence = activeChannel.presence;
-        
+        const presence = channel.presence;
         presence.subscribe(['enter', 'leave', 'update'], async () => {
             const presenceMembers = await presence.get();
             membersMap.clear();
-            presenceMembers.forEach(member => {
-                membersMap.set(member.clientId, member.data);
-            });
-            renderUserList();
-        });
-        
-        await presence.enter({ name: currentUser.name });
-    }
-
-    function renderUserList() {
-        elements.usersListUI.innerHTML = '';
-        membersMap.forEach((data, id) => {
-            if (data && data.name) {
-                const userItem = document.createElement('div');
-                userItem.className = 'user-item';
-                userItem.innerHTML = `<div class="avatar">${data.name.charAt(0).toUpperCase()}</div><div class="user-name">${data.name}</div>`;
-                if (id !== currentUser.id) {
-                    userItem.onclick = () => showProfileModal({ id, name: data.name });
+            let typingUsers = [];
+            presenceMembers.forEach(m => {
+                membersMap.set(m.clientId, m.data);
+                if (m.data.isTyping && m.clientId !== currentUser.id) {
+                    typingUsers.push(m.data.name);
                 }
-                elements.usersListUI.appendChild(userItem);
+            });
+            renderUserLists();
+            if (typingUsers.length > 0) {
+                elements.typingIndicator.textContent = `${typingUsers.join(', ')} is typing...`;
+            } else {
+                elements.typingIndicator.textContent = '';
             }
         });
+        await presence.enter(currentUser);
     }
 
-    function sendMessage() {
-        const text = elements.messageInput.value.trim();
-        if (text && activeChannel) {
-            activeChannel.publish('message', { text, sender: currentUser });
-            elements.messageInput.value = '';
-            elements.messageInput.focus();
+    function linkify(text) {
+        const urlRegex = /(\b(https?|ftp|file ):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+        return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+    }
+
+    function addMessageUI(data, channelId) {
+        if (channelId !== activeChannelId) {
+            const conv = conversations.get(channelId);
+            if (conv) {
+                conv.unread = (conv.unread || 0) + 1;
+                renderConversations();
+                if (document.hidden) showNotification(`New message in ${conv.name}`, data.text);
+            }
+            return;
         }
-    }
-
-    function addMessageUI(data, messageId) {
         const isSent = data.sender.id === currentUser.id;
         const messageDiv = document.createElement('div');
-        messageDiv.id = messageId;
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        messageDiv.id = data.id;
+
+        const avatar = createAvatar(data.sender);
         
-        const usernameHTML = `<span class="username" data-user-id="${data.sender.id}">${data.sender.name}</span>`;
-        messageDiv.innerHTML = `${usernameHTML}<span>${data.text}</span>`;
-        
-        elements.messagesList.append(messageDiv);
+        const messageBody = document.createElement('div');
+        messageBody.className = 'message-body';
+
+        const usernameSpan = document.createElement('span');
+        usernameSpan.className = 'username';
+        usernameSpan.textContent = data.sender.name;
+        usernameSpan.style.color = data.sender.color;
+        messageBody.appendChild(usernameSpan);
+
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        const textSpan = document.createElement('span');
+        textSpan.className = 'message-text';
+        textSpan.innerHTML = linkify(data.text);
+        messageContent.appendChild(textSpan);
+        messageBody.appendChild(messageContent);
+
+        if (isSent) {
+            const actions = document.createElement('div');
+            actions.className = 'message-actions';
+            actions.innerHTML = `<button title="Edit"><svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg></button><button title="Delete"><svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>`;
+            actions.children[0].onclick = () => editMessage(data.id, data.text);
+            actions.children[1].onclick = () => deleteMessage(data.id);
+            messageDiv.appendChild(actions);
+        }
+
+        messageDiv.append(avatar, messageBody);
+        elements.messagesList.prepend(messageDiv);
         elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight;
     }
 
-    function showProfileModal(user) {
-        elements.modalAvatar.textContent = user.name.charAt(0).toUpperCase();
-        elements.modalUsername.textContent = user.name;
-        elements.modalUserid.textContent = user.id;
-        elements.profileModalBackdrop.classList.add('visible');
+    function deleteMessage(messageId) {
+        if (!confirm('Are you sure you want to delete this message?')) return;
+        channels.get(activeChannelId).publish('delete_message', { messageId });
     }
 
-    function hideProfileModal() {
-        elements.profileModalBackdrop.classList.remove('visible');
+    function editMessage(messageId, oldText) {
+        const newText = prompt('Edit your message:', oldText);
+        if (newText && newText.trim() !== '' && newText !== oldText) {
+            channels.get(activeChannelId).publish('edit_message', { messageId, newText: newText.trim() });
+        }
     }
 
-    // --- EVENT LISTENERS ---
-    elements.sendButton.onclick = sendMessage;
-    elements.messageInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
-    elements.showUsersBtn.onclick = () => elements.usersSidebar.classList.add('visible');
-    elements.backToChatBtn.onclick = () => elements.usersSidebar.classList.remove('visible');
-    elements.profileModalBackdrop.onclick = (e) => { if (e.target === elements.profileModalBackdrop) hideProfileModal(); };
-    elements.modalMessageBtn.onclick = () => {
-        alert(`Starting private chat with ${elements.modalUsername.textContent}...`);
-        hideProfileModal();
+    function saveMessage(channelId, messageData) {
+        const history = JSON.parse(localStorage.getItem(`msg_${channelId}`) || '[]');
+        history.push(messageData);
+        if (history.length > 50) history.shift();
+        localStorage.setItem(`msg_${channelId}`, JSON.stringify(history));
+    }
+
+    function loadMessages(channelId) {
+        const history = JSON.parse(localStorage.getItem(`msg_${channelId}`) || '[]');
+        history.forEach(msg => addMessageUI(msg, channelId));
+    }
+
+    function showNotification(title, body) {
+        if (Notification.permission === 'granted') new Notification(title, { body });
+    }
+
+    function showModal(modalBackdrop) { modalBackdrop.classList.add('visible'); }
+    function hideModal(modalBackdrop) { modalBackdrop.classList.remove('visible'); }
+
+    function showUserProfileModal(user) {
+        const avatar = createAvatar(user);
+        elements.profileModalAvatar.style.backgroundImage = avatar.style.backgroundImage;
+        elements.profileModalAvatar.style.background = avatar.style.background;
+        elements.profileModalAvatar.textContent = avatar.textContent;
+        elements.profileModalUsername.textContent = user.name;
+        
+        const isFriend = friends.has(user.id);
+        elements.profileModalBody.innerHTML = `
+            <button class="modal-button primary" id="profile-dm-btn" style="width: 100%;">Message</button>
+            <button class="modal-button ${isFriend ? 'danger' : 'secondary'}" id="profile-friend-btn" style="width: 100%; margin-top: 12px;">${isFriend ? 'Remove Friend' : 'Add Friend'}</button>
+        `;
+        document.getElementById('profile-dm-btn').onclick = () => {
+            startPrivateChat(user);
+            hideModal(elements.userProfileModalBackdrop);
+        };
+        document.getElementById('profile-friend-btn').onclick = () => {
+            toggleFriend(user);
+            hideModal(elements.userProfileModalBackdrop);
+        };
+        showModal(elements.userProfileModalBackdrop);
+    }
+
+    function toggleFriend(user) {
+        if (friends.has(user.id)) {
+            friends.delete(user.id);
+        } else {
+            friends.set(user.id, user);
+        }
+        saveState();
+        renderUserLists();
+    }
+
+    function startPrivateChat(user) {
+        const privateChannelId = `private-${[currentUser.id, user.id].sort().join('-')}`;
+        if (!conversations.has(privateChannelId)) {
+            conversations.set(privateChannelId, { id: privateChannelId, name: user.name, lastMessage: 'Chat started.', unread: 0, user: user, timestamp: Date.now() });
+            saveState();
+        }
+        switchChannel(privateChannelId);
+    }
+
+    // --- Event Listeners ---
+    elements.addRoomBtn.onclick = () => showModal(elements.roomModalBackdrop);
+    elements.settingsBtn.onclick = () => {
+        elements.myUsernameInput.value = currentUser.name;
+        const colors = ['#e53e3e', '#b91c1c', '#dd6b20', '#a259ff', '#00c4ff', '#28a745'];
+        elements.colorPicker.innerHTML = colors.map(c => `<div class="color-swatch" style="background-color:${c}" data-color="${c}"></div>`).join('');
+        const currentSwatch = document.querySelector(`.color-swatch[data-color="${currentUser.color}"]`);
+        if(currentSwatch) currentSwatch.classList.add('selected');
+        document.querySelectorAll('.color-swatch').forEach(s => s.onclick = () => {
+            document.querySelector('.color-swatch.selected')?.classList.remove('selected');
+            s.classList.add('selected');
+        });
+        showModal(elements.settingsModalBackdrop);
     };
 
-    // Event Delegation for clicking usernames in chat
-    elements.messagesList.onclick = (e) => {
-        const target = e.target;
-        if (target.classList.contains('username')) {
-            const userId = target.dataset.userId;
-            if (userId !== currentUser.id && membersMap.has(userId)) {
-                showProfileModal({ id: userId, name: membersMap.get(userId).name });
+    [elements.roomModalBackdrop, elements.settingsModalBackdrop, elements.userProfileModalBackdrop].forEach(modal => {
+        modal.onclick = (e) => { if(e.target === modal) hideModal(modal); };
+    });
+    elements.settingsCloseBtn.onclick = () => hideModal(elements.settingsModalBackdrop);
+
+    elements.createRoomBtn.onclick = () => {
+        const roomName = elements.createRoomNameInput.value.trim();
+        const roomPass = elements.createRoomPassInput.value.trim();
+        if (!roomName || !roomPass) return alert('Please enter a room name and password.');
+        const newRoomId = `room_${roomName.replace(/\s+/g, '_')}_${Math.random().toString(36).substr(2, 5)}`;
+        const roomIcon = elements.createRoomIconSelect.value;
+        conversations.set(newRoomId, { id: newRoomId, name: roomName, lastMessage: `You created the room.`, unread: 0, user: { name: roomName, icon: roomIcon, isRoom: true }, isProtected: true, password: roomPass, timestamp: Date.now() });
+        saveState();
+        switchChannel(newRoomId);
+        hideModal(elements.roomModalBackdrop);
+    };
+
+    elements.joinRoomBtn.onclick = () => {
+        const roomName = elements.joinRoomNameInput.value.trim();
+        const roomPass = elements.joinRoomPassInput.value.trim();
+        if (!roomName || !roomPass) return alert('Please enter the room name and password.');
+        
+        let foundRoom = null;
+        for (const conv of conversations.values()) {
+            if (conv.name === roomName && conv.isProtected && conv.password === roomPass) {
+                foundRoom = conv;
+                break;
             }
+        }
+        if (foundRoom) {
+            switchChannel(foundRoom.id);
+            hideModal(elements.roomModalBackdrop);
+        } else {
+            alert('Room not found or password incorrect. Note: For this demo, you can only join rooms already in your local conversation history. Share the exact room name and password with a friend!');
         }
     };
 
-    ably.connection.on('connected', () => setupChannel('public-room-stable'));
+    elements.settingsSaveBtn.onclick = async () => {
+        const newName = elements.myUsernameInput.value.trim();
+        if (!newName) return alert('Username cannot be empty.');
+        currentUser.name = newName;
+        currentUser.color = document.querySelector('.color-swatch.selected').dataset.color;
+        localStorage.setItem('nlvx_username', currentUser.name);
+        localStorage.setItem('nlvx_usercolor', currentUser.color);
+        updateSidebarProfile();
+        if (channels.has(activeChannelId)) {
+            await channels.get(activeChannelId).presence.update(currentUser);
+        }
+        hideModal(elements.settingsModalBackdrop);
+    };
+
+    elements.sendButton.onclick = () => {
+        const text = elements.messageInput.value.trim();
+        if (text && channels.has(activeChannelId)) {
+            const messageId = `${currentUser.id}-${Date.now()}`;
+            channels.get(activeChannelId).publish('message', { id: messageId, text, sender: currentUser });
+            elements.messageInput.value = '';
+            elements.messageInput.focus();
+        }
+    };
+    elements.messageInput.onkeypress = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); elements.sendButton.onclick(); } };
+    
+    elements.messageInput.addEventListener('input', () => {
+        channels.get(activeChannelId)?.presence.update({ isTyping: true });
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            channels.get(activeChannelId)?.presence.update({ isTyping: false });
+        }, 2000);
+    });
+
+    elements.chatMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        elements.chatDropdownMenu.classList.toggle('show');
+    };
+    document.addEventListener('click', () => elements.chatDropdownMenu.classList.remove('show'));
+
+    elements.leaveChatBtn.onclick = () => {
+        if (confirm(`Are you sure you want to leave "${conversations.get(activeChannelId).name}"? This will remove it from your list.`)) {
+            channels.get(activeChannelId)?.detach();
+            channels.delete(activeChannelId);
+            conversations.delete(activeChannelId);
+            localStorage.removeItem(`msg_${activeChannelId}`);
+            saveState();
+            switchChannel('public-room');
+        }
+    };
+
+    elements.sidebarTabs.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tab-btn')) {
+            document.querySelector('.users-sidebar .tab-btn.active').classList.remove('active');
+            e.target.classList.add('active');
+            document.getElementById('online-list').style.display = 'none';
+            document.getElementById('friends-list').style.display = 'none';
+            document.getElementById(e.target.dataset.tab).style.display = 'flex';
+        }
+    });
+    
+    document.querySelector('#room-modal .sidebar-tabs').addEventListener('click', (e) => {
+        if (e.target.classList.contains('tab-btn')) {
+            document.querySelector('#room-modal .tab-btn.active').classList.remove('active');
+            e.target.classList.add('active');
+            document.querySelector('#room-modal .tab-content.active').classList.remove('active');
+            document.getElementById(e.target.dataset.tab).classList.add('active');
+        }
+    });
+
+    // --- INITIALIZATION ---
+    ably.connection.on('connected', async () => {
+        loadState();
+        updateSidebarProfile();
+        renderConversations();
+        await switchChannel(localStorage.getItem('nlvx_lastChannel') || 'public-room');
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+        }
+    });
+
     ably.connection.on('failed', (err) => console.error('Ably connection failed:', err));
+    window.onbeforeunload = () => localStorage.setItem('nlvx_lastChannel', activeChannelId);
+
     </script>
 </body>
 </html>
