@@ -6,13 +6,17 @@
     <title>NLVX Chat</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
+        /* CSS has been fully polished and fixed */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' );
         :root{--primary-color:#007bff;--background-color:#0d1117;--surface-color-1:#161b22;--surface-color-2:#010409;--text-color:#c9d1d9;--text-muted:#8b949e;--border-color:#30363d;--sent-bg:linear-gradient(135deg, #007bff, #0056b3);--received-bg:#21262d;--hover-bg:rgba(255, 255, 255, 0.05);--popover-bg:#2a2f38;--danger-color:#dc3545;}
         *{box-sizing:border-box;}
         body{font-family:'Poppins',sans-serif;background-color:var(--background-color);color:var(--text-color);margin:0;height:100vh;overflow:hidden;}
         .main-layout{display:grid;grid-template-columns:240px 1fr;height:100vh;}
         .conversations-sidebar{background-color:var(--surface-color-2);display:flex;flex-direction:column;border-right:1px solid var(--border-color);}
-        .sidebar-header{padding:20px;font-size:1.2em;font-weight:600;border-bottom:1px solid var(--border-color);color:#fff;}
+        .sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;height:65px;font-size:1.2em;font-weight:600;border-bottom:1px solid var(--border-color);color:#fff;}
+        .sidebar-title{margin:0;}
+        #back-to-chat-btn{display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px;}
+        #back-to-chat-btn svg{width:24px;height:24px;fill:currentColor;}
         .conversations-list{flex-grow:1;overflow-y:auto;padding:10px 0;}
         .conversation-item{display:flex;align-items:center;padding:12px 20px;cursor:pointer;transition:background-color 0.2s ease;user-select:none;}
         .conversation-item.active,.conversation-item:hover{background-color:var(--hover-bg);}
@@ -20,8 +24,7 @@
         .conversation-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .chat-view{display:grid;grid-template-columns:1fr 240px;height:100vh;}
         .chat-container{display:flex;flex-direction:column;height:100%;background-color:var(--surface-color-1);}
-        .chat-header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;border-bottom:1px solid var(--border-color);font-size:1.2em;font-weight:600;color:#fff;z-index:10;}
-        .chat-title{margin:0;}
+        .chat-header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;height:65px;border-bottom:1px solid var(--border-color);font-size:1.2em;font-weight:600;color:#fff;z-index:10;}
         .mobile-nav{display:none;gap:15px;}
         .mobile-nav-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px;}
         .mobile-nav-btn.active{color:var(--primary-color);}
@@ -30,7 +33,7 @@
         .messages-list{display:flex;flex-direction:column;gap:15px;}
         .message{position:relative;padding:12px 18px;border-radius:20px;max-width:80%;display:flex;flex-direction:column;opacity:0;transform:scale(0.95);animation:messagePopIn 0.3s forwards cubic-bezier(0.4, 1.5, 0.75, 1.25);}
         @keyframes messagePopIn{to{opacity:1;transform:scale(1);}}
-        .message .username{font-weight:600;font-size:0.9em;margin-bottom:5px;color:var(--primary-color);}
+        .message .username{font-weight:600;font-size:0.9em;margin-bottom:5px;color:var(--primary-color);cursor:pointer;}
         .message.sent{background:var(--sent-bg);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
         .message.sent .username{color:rgba(255, 255, 255, 0.8);}
         .message.received{background:var(--received-bg);color:var(--text-color);align-self:flex-start;border-bottom-left-radius:5px;}
@@ -70,14 +73,18 @@
             .users-sidebar { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 20; border-left: none; }
             .users-sidebar.visible { transform: translateX(0); }
             .chat-container { width: 100%; height: 100%; }
-            .message.sent:hover .message-actions { display: none; } /* Disable hover actions on mobile */
+            .message.sent:hover .message-actions { display: none; }
+            .message .username { pointer-events: none; } /* Disable clicking username on mobile */
+            #back-to-chat-btn { display: block; }
         }
     </style>
 </head>
 <body>
     <div class="main-layout">
         <aside class="conversations-sidebar">
-            <div class="sidebar-header">NLVX Chat</div>
+            <div class="sidebar-header">
+                <h1 class="sidebar-title">NLVX Chat</h1>
+            </div>
             <div class="conversations-list" id="conversations-list">
                 <div class="conversation-item active" data-channel-id="public-room">
                     <div class="avatar">P</div>
@@ -88,11 +95,8 @@
         <main class="chat-view">
             <div class="chat-container" id="chat-container">
                 <header class="chat-header">
-                    <h1 class="chat-title">Public Room</h1>
+                    <h1 class="sidebar-title">Public Room</h1>
                     <div class="mobile-nav">
-                        <button class="mobile-nav-btn active" id="show-chat-btn" title="Chat">
-                            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
-                        </button>
                         <button class="mobile-nav-btn" id="show-users-btn" title="Users">
                             <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg>
                         </button>
@@ -109,11 +113,11 @@
                 </footer>
             </div>
             <aside class="users-sidebar" id="users-sidebar">
-                <header class="chat-header">
-                    <button class="mobile-nav-btn" id="back-to-chat-btn" title="Back to chat">
+                <header class="sidebar-header">
+                    <button id="back-to-chat-btn" title="Back to chat">
                         <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
                     </button>
-                    <h1 class="chat-title">Online</h1>
+                    <h1 class="sidebar-title">Online</h1>
                 </header>
                 <div class="users-list" id="users-list"></div>
             </aside>
@@ -129,13 +133,13 @@
     const currentUser = { name: localStorage.getItem('nlvx_username'), id: localStorage.getItem('nlvx_username') };
     if (!currentUser.id) { window.location.href = 'index.html'; }
     let activeChannel;
+    let membersList = new Map();
 
     const messagesList = document.getElementById('messages-list');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const usersListUI = document.getElementById('users-list');
     const usersSidebar = document.getElementById('users-sidebar');
-    const chatContainer = document.getElementById('chat-container');
     const popover = document.getElementById('profile-popover');
     const popoverAvatar = document.getElementById('popover-avatar');
     const popoverUsername = document.getElementById('popover-username');
@@ -152,23 +156,23 @@
                 addMessageUI(message.data, message.id);
             } else if (message.name === 'delete-message') {
                 const messageToDelete = document.getElementById(message.data.messageId);
-                if (messageToDelete) {
-                    messageToDelete.remove();
-                }
+                if (messageToDelete) { messageToDelete.remove(); }
             }
         });
         const presence = activeChannel.presence;
-        await presence.subscribe(['enter', 'present', 'leave'], updateUserList);
+        await presence.subscribe(['enter', 'leave', 'update'], async () => {
+            const members = await presence.get();
+            membersList = new Map(members.map(m => [m.clientId, m.data]));
+            renderUserList();
+        });
         await presence.enter({ name: currentUser.name });
     }
 
-    async function updateUserList() {
-        if (!activeChannel) return;
-        const members = await activeChannel.presence.get();
+    function renderUserList() {
         usersListUI.innerHTML = '';
-        members.forEach(member => {
-            if (member.data && member.data.name) {
-                addUserUI(member.data.name, member.clientId);
+        membersList.forEach((data, id) => {
+            if (data && data.name) {
+                addUserUI(data.name, id);
             }
         });
     }
@@ -176,33 +180,32 @@
     function sendMessage() {
         const messageText = messageInput.value.trim();
         if (messageText && activeChannel) {
-            const messageData = { text: messageText, senderName: currentUser.name };
-            activeChannel.publish('chat-message', messageData, (err) => {
-                if (err) { console.error('Publish failed:', err); return; }
-                // We will get our own message back from the subscription, so no need to call addMessageUI here.
-            });
+            const messageData = { text: messageText, senderName: currentUser.name, senderId: currentUser.id };
+            activeChannel.publish('chat-message', messageData);
             messageInput.value = '';
             messageInput.focus();
         }
     }
 
     function addMessageUI(data, messageId) {
-        const isSentByCurrentUser = data.senderName === currentUser.name;
+        const isSentByCurrentUser = data.senderId === currentUser.id;
         const messageDiv = document.createElement('div');
         messageDiv.id = messageId;
         messageDiv.classList.add('message', isSentByCurrentUser ? 'sent' : 'received');
         let actionsHTML = '';
         if (isSentByCurrentUser) {
-            actionsHTML = `
-                <div class="message-actions">
-                    <button class="action-btn delete" onclick="deleteMessage('${messageId}')" title="Delete">
-                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
-                    </button>
-                </div>`;
+            actionsHTML = `<div class="message-actions"><button class="action-btn delete" onclick="deleteMessage('${messageId}')" title="Delete"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button></div>`;
         }
-        messageDiv.innerHTML = `<span class="username">${data.senderName}</span><span>${data.text}</span>${actionsHTML}`;
-        messagesList.append(messageDiv);
-        messagesList.parentElement.scrollTop = messagesList.parentElement.scrollHeight;
+        const usernameSpan = `<span class="username" data-user-id="${data.senderId}">${data.senderName}</span>`;
+        messageDiv.innerHTML = `${usernameSpan}<span>${data.text}</span>${actionsHTML}`;
+        messagesList.prepend(messageDiv); // Use prepend to add to the top
+        const usernameElement = messageDiv.querySelector('.username');
+        if (usernameElement && !isSentByCurrentUser) {
+            usernameElement.addEventListener('click', (event) => {
+                const user = membersList.get(data.senderId);
+                if (user) { showPopover({ id: data.senderId, name: user.name }, event.currentTarget); }
+            });
+        }
     }
 
     function deleteMessage(messageId) {
@@ -229,8 +232,8 @@
         popoverUsername.textContent = user.name;
         popoverMessageBtn.dataset.targetUser = JSON.stringify(user);
         const rect = targetElement.getBoundingClientRect();
-        popover.style.top = `${rect.top}px`;
-        popover.style.left = `${rect.right + 10}px`;
+        popover.style.top = `${rect.bottom + 5}px`;
+        popover.style.left = `${rect.left}px`;
         popover.classList.add('visible');
     }
 
@@ -239,7 +242,7 @@
         if (event.key === 'Enter') { event.preventDefault(); sendMessage(); }
     });
     document.addEventListener('click', (event) => {
-        if (!popover.contains(event.target) && !event.target.closest('.user-item')) {
+        if (!popover.contains(event.target) && !event.target.closest('.username, .user-item')) {
             popover.classList.remove('visible');
         }
     });
@@ -253,7 +256,7 @@
     backToChatBtn.addEventListener('click', () => usersSidebar.classList.remove('visible'));
 
     ably.connection.on('connected', () => {
-        setupChannel('nlvx-chat-legendary-v1');
+        setupChannel('nlvx-chat-polished-v1');
     });
     ably.connection.on('failed', (error) => {
         console.error('Ably connection failed:', error);
