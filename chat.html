@@ -7,7 +7,7 @@
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' );
-        :root{--primary-color:#007bff;--background-color:#0d1117;--surface-color-1:#161b22;--surface-color-2:#010409;--text-color:#c9d1d9;--text-muted:#8b949e;--border-color:#30363d;--sent-bg:linear-gradient(135deg, #007bff, #0056b3);--received-bg:#21262d;--hover-bg:rgba(255, 255, 255, 0.05);--popover-bg:#2a2f38;}
+        :root{--primary-color:#007bff;--background-color:#0d1117;--surface-color-1:#161b22;--surface-color-2:#010409;--text-color:#c9d1d9;--text-muted:#8b949e;--border-color:#30363d;--sent-bg:linear-gradient(135deg, #007bff, #0056b3);--received-bg:#21262d;--hover-bg:rgba(255, 255, 255, 0.05);--popover-bg:#2a2f38;--danger-color:#dc3545;}
         *{box-sizing:border-box;}
         body{font-family:'Poppins',sans-serif;background-color:var(--background-color);color:var(--text-color);margin:0;height:100vh;overflow:hidden;}
         .main-layout{display:grid;grid-template-columns:240px 1fr;height:100vh;}
@@ -18,7 +18,7 @@
         .conversation-item.active,.conversation-item:hover{background-color:var(--hover-bg);}
         .avatar{width:40px;height:40px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2em;margin-right:12px;flex-shrink:0;}
         .conversation-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .chat-view{display:grid;grid-template-columns:1fr 240px;height:100vh;position:relative;overflow:hidden;}
+        .chat-view{display:grid;grid-template-columns:1fr 240px;height:100vh;}
         .chat-container{display:flex;flex-direction:column;height:100%;background-color:var(--surface-color-1);}
         .chat-header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;border-bottom:1px solid var(--border-color);font-size:1.2em;font-weight:600;color:#fff;z-index:10;}
         .chat-title{margin:0;}
@@ -28,12 +28,18 @@
         .mobile-nav-btn svg{width:24px;height:24px;fill:currentColor;}
         .messages-area{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column-reverse;}
         .messages-list{display:flex;flex-direction:column;gap:15px;}
-        .message{padding:12px 18px;border-radius:20px;max-width:80%;display:flex;flex-direction:column;opacity:0;transform:scale(0.95);animation:messagePopIn 0.3s forwards cubic-bezier(0.4, 1.5, 0.75, 1.25);}
+        .message{position:relative;padding:12px 18px;border-radius:20px;max-width:80%;display:flex;flex-direction:column;opacity:0;transform:scale(0.95);animation:messagePopIn 0.3s forwards cubic-bezier(0.4, 1.5, 0.75, 1.25);}
         @keyframes messagePopIn{to{opacity:1;transform:scale(1);}}
         .message .username{font-weight:600;font-size:0.9em;margin-bottom:5px;color:var(--primary-color);}
         .message.sent{background:var(--sent-bg);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
         .message.sent .username{color:rgba(255, 255, 255, 0.8);}
         .message.received{background:var(--received-bg);color:var(--text-color);align-self:flex-start;border-bottom-left-radius:5px;}
+        .message-actions{position:absolute;top:-15px;right:10px;display:none;gap:5px;background-color:var(--popover-bg);padding:5px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.3);}
+        .message.sent:hover .message-actions{display:flex;}
+        .action-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;}
+        .action-btn:hover{color:var(--primary-color);}
+        .action-btn.delete:hover{color:var(--danger-color);}
+        .action-btn svg{width:18px;height:18px;fill:currentColor;}
         .input-area{display:flex;padding:15px 20px;border-top:1px solid var(--border-color);gap:10px;}
         #message-input{flex-grow:1;padding:14px 20px;border:1px solid var(--border-color);background-color:var(--background-color);color:var(--text-color);border-radius:24px;font-size:1em;transition:all 0.3s ease;}
         #message-input:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(0, 123, 255, 0.25);}
@@ -56,34 +62,15 @@
         ::-webkit-scrollbar-thumb{background-color:#444;border-radius:10px;}
         ::-webkit-scrollbar-thumb:hover{background-color:#555;}
         
-        /* --- NEW LEGENDARY MOBILE DESIGN --- */
         @media (max-width: 768px) {
             .main-layout { grid-template-columns: 1fr; }
             .conversations-sidebar { display: none; }
-            .chat-view { grid-template-columns: 1fr; }
+            .chat-view { grid-template-columns: 1fr; position: relative; overflow: hidden; }
             .mobile-nav { display: flex; }
-            .users-sidebar {
-                position: absolute;
-                top: 0;
-                right: 0;
-                width: 100%;
-                height: 100%;
-                transform: translateX(100%);
-                transition: transform 0.3s ease-in-out;
-                z-index: 20;
-                border-left: none;
-            }
+            .users-sidebar { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 20; border-left: none; }
             .users-sidebar.visible { transform: translateX(0); }
-            .chat-container {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                transition: transform 0.3s ease-in-out;
-                z-index: 10;
-            }
-            .users-sidebar.visible ~ .chat-container { transform: translateX(-100%); }
+            .chat-container { width: 100%; height: 100%; }
+            .message.sent:hover .message-actions { display: none; } /* Disable hover actions on mobile */
         }
     </style>
 </head>
@@ -99,13 +86,9 @@
             </div>
         </aside>
         <main class="chat-view">
-            <aside class="users-sidebar" id="users-sidebar">
-                <div class="sidebar-header">ONLINE</div>
-                <div class="users-list" id="users-list"></div>
-            </aside>
-            <div class="chat-container">
+            <div class="chat-container" id="chat-container">
                 <header class="chat-header">
-                    <h1 class="chat-title" id="chat-title">Public Room</h1>
+                    <h1 class="chat-title">Public Room</h1>
                     <div class="mobile-nav">
                         <button class="mobile-nav-btn active" id="show-chat-btn" title="Chat">
                             <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
@@ -125,6 +108,15 @@
                     </button>
                 </footer>
             </div>
+            <aside class="users-sidebar" id="users-sidebar">
+                <header class="chat-header">
+                    <button class="mobile-nav-btn" id="back-to-chat-btn" title="Back to chat">
+                        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+                    </button>
+                    <h1 class="chat-title">Online</h1>
+                </header>
+                <div class="users-list" id="users-list"></div>
+            </aside>
         </main>
     </div>
     <div id="profile-popover" class="profile-popover">
@@ -143,20 +135,26 @@
     const sendButton = document.getElementById('send-button');
     const usersListUI = document.getElementById('users-list');
     const usersSidebar = document.getElementById('users-sidebar');
+    const chatContainer = document.getElementById('chat-container');
     const popover = document.getElementById('profile-popover');
     const popoverAvatar = document.getElementById('popover-avatar');
     const popoverUsername = document.getElementById('popover-username');
     const popoverMessageBtn = document.getElementById('popover-message-btn');
-    const showChatBtn = document.getElementById('show-chat-btn');
     const showUsersBtn = document.getElementById('show-users-btn');
+    const backToChatBtn = document.getElementById('back-to-chat-btn');
 
     const ably = new Ably.Realtime({ key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4', clientId: currentUser.id });
 
     async function setupChannel(channelId) {
         activeChannel = ably.channels.get(channelId);
         await activeChannel.subscribe((message) => {
-            if (message.clientId !== currentUser.id) {
-                addMessageUI(message.data.text, message.data.senderName);
+            if (message.name === 'chat-message') {
+                addMessageUI(message.data, message.id);
+            } else if (message.name === 'delete-message') {
+                const messageToDelete = document.getElementById(message.data.messageId);
+                if (messageToDelete) {
+                    messageToDelete.remove();
+                }
             }
         });
         const presence = activeChannel.presence;
@@ -178,19 +176,39 @@
     function sendMessage() {
         const messageText = messageInput.value.trim();
         if (messageText && activeChannel) {
-            activeChannel.publish({ data: { text: messageText, senderName: currentUser.name } });
-            addMessageUI(messageText, currentUser.name, true);
+            const messageData = { text: messageText, senderName: currentUser.name };
+            activeChannel.publish('chat-message', messageData, (err) => {
+                if (err) { console.error('Publish failed:', err); return; }
+                // We will get our own message back from the subscription, so no need to call addMessageUI here.
+            });
             messageInput.value = '';
             messageInput.focus();
         }
     }
 
-    function addMessageUI(text, senderName, isSentByCurrentUser = false) {
+    function addMessageUI(data, messageId) {
+        const isSentByCurrentUser = data.senderName === currentUser.name;
         const messageDiv = document.createElement('div');
+        messageDiv.id = messageId;
         messageDiv.classList.add('message', isSentByCurrentUser ? 'sent' : 'received');
-        messageDiv.innerHTML = `<span class="username">${senderName}</span><span>${text}</span>`;
+        let actionsHTML = '';
+        if (isSentByCurrentUser) {
+            actionsHTML = `
+                <div class="message-actions">
+                    <button class="action-btn delete" onclick="deleteMessage('${messageId}')" title="Delete">
+                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+                    </button>
+                </div>`;
+        }
+        messageDiv.innerHTML = `<span class="username">${data.senderName}</span><span>${data.text}</span>${actionsHTML}`;
         messagesList.append(messageDiv);
         messagesList.parentElement.scrollTop = messagesList.parentElement.scrollHeight;
+    }
+
+    function deleteMessage(messageId) {
+        if (confirm('Are you sure you want to delete this message?')) {
+            activeChannel.publish('delete-message', { messageId: messageId });
+        }
     }
 
     function addUserUI(name, id) {
@@ -231,21 +249,11 @@
         popover.classList.remove('visible');
     });
 
-    showUsersBtn.addEventListener('click', () => {
-        usersSidebar.classList.add('visible');
-        showUsersBtn.classList.add('active');
-        showChatBtn.classList.remove('active');
-    });
-
-    showChatBtn.addEventListener('click', () => {
-        usersSidebar.classList.remove('visible');
-        showChatBtn.classList.add('active');
-        showUsersBtn.classList.remove('active');
-    });
+    showUsersBtn.addEventListener('click', () => usersSidebar.classList.add('visible'));
+    backToChatBtn.addEventListener('click', () => usersSidebar.classList.remove('visible'));
 
     ably.connection.on('connected', () => {
-        console.log('Ably connection successful!');
-        setupChannel('nlvx-chat-public-room-v6');
+        setupChannel('nlvx-chat-legendary-v1');
     });
     ably.connection.on('failed', (error) => {
         console.error('Ably connection failed:', error);

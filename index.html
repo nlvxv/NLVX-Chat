@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome - NLVX Chat</title>
+    <title>Welcome to NLVX Chat</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap' );
-
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' );
+        
         :root {
             --primary-color: #007bff;
-            --primary-hover: #0056b3;
             --background-color: #0d1117;
             --surface-color: #161b22;
             --text-color: #c9d1d9;
             --border-color: #30363d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
@@ -24,134 +29,128 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
             overflow: hidden;
         }
 
         .login-container {
             background-color: var(--surface-color);
-            padding: 50px;
+            padding: 40px;
             border-radius: 16px;
             border: 1px solid var(--border-color);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             text-align: center;
             width: 90%;
             max-width: 400px;
-            transform: translateY(20px);
+            transform: scale(0.9);
             opacity: 0;
-            animation: fadeInUp 0.8s 0.2s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
+            animation: popIn 0.5s 0.2s forwards cubic-bezier(0.4, 1.5, 0.75, 1.25);
         }
 
-        @keyframes fadeInUp {
+        @keyframes popIn {
             to {
-                transform: translateY(0);
+                transform: scale(1);
                 opacity: 1;
             }
         }
 
-        h1 {
-            color: #ffffff;
-            margin-bottom: 10px;
-            font-size: 3em;
+        .login-title {
+            font-size: 2.5em;
             font-weight: 700;
-            letter-spacing: 2px;
-            animation: fadeIn 1s 0.5s forwards;
-            opacity: 0;
+            color: #fff;
+            margin-bottom: 10px;
         }
 
-        p {
-            color: #8b949e;
-            margin-bottom: 40px;
-            animation: fadeIn 1s 0.7s forwards;
-            opacity: 0;
+        .login-title span {
+            color: var(--primary-color);
         }
 
-        @keyframes fadeIn {
-            to { opacity: 1; }
+        .login-subtitle {
+            font-size: 1em;
+            color: var(--text-muted);
+            margin-bottom: 30px;
         }
 
         .input-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
-        input[type="text"] {
+        #username-input {
             width: 100%;
-            padding: 16px;
-            border: 1px solid var(--border-color);
+            padding: 15px 20px;
             background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             color: var(--text-color);
-            border-radius: 10px;
-            box-sizing: border-box;
-            font-size: 1em;
+            font-size: 1.1em;
             transition: all 0.3s ease;
         }
 
-        input[type="text"]::placeholder {
-            color: #8b949e;
-        }
-
-        input[type="text"]:focus {
+        #username-input:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
         }
 
-        button {
+        #join-button {
             width: 100%;
-            padding: 16px;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
             border: none;
-            background: var(--primary-color);
-            color: white;
-            font-size: 1.1em;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.2em;
             font-weight: 600;
-            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            transform: translateY(0);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        button:hover {
-            background: var(--primary-hover);
+        #join-button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.25);
         }
+        
+        #join-button:active {
+            transform: translateY(-1px);
+        }
+
     </style>
 </head>
 <body>
 
     <div class="login-container">
-        <h1>NLVX Chat</h1>
-        <p>Choose a username to get started</p>
-        <div class="input-group">
-            <input type="text" id="username-input" placeholder="Enter your username...">
-        </div>
-        <button id="join-button">Join Chat</button>
+        <h1 class="login-title">NLVX <span>Chat</span></h1>
+        <p class="login-subtitle">Enter your username to join the conversation</p>
+        <form id="login-form">
+            <div class="input-group">
+                <input type="text" id="username-input" placeholder="Your Username" required autocomplete="off">
+            </div>
+            <button type="submit" id="join-button">Join Chat</button>
+        </form>
     </div>
 
     <script>
+        const loginForm = document.getElementById('login-form');
         const usernameInput = document.getElementById('username-input');
-        const joinButton = document.getElementById('join-button');
 
+        // Check if a username already exists and pre-fill it
         const savedUsername = localStorage.getItem('nlvx_username');
         if (savedUsername) {
-            window.location.href = 'chat.html';
+            usernameInput.value = savedUsername;
         }
 
-        function joinChat() {
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+            
             const username = usernameInput.value.trim();
+            
             if (username) {
+                // Save the username to localStorage
                 localStorage.setItem('nlvx_username', username);
+                
+                // Redirect to the chat page
                 window.location.href = 'chat.html';
             } else {
-                usernameInput.style.borderColor = '#ff4d4d';
-                usernameInput.placeholder = 'Username cannot be empty!';
-            }
-        }
-
-        joinButton.addEventListener('click', joinChat);
-        usernameInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                joinChat();
+                alert('Please enter a username.');
             }
         });
     </script>
