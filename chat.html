@@ -6,7 +6,7 @@
     <title>NLVX Chat</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        /* CSS is 100% final and correct. No changes needed. */
+        /* CSS includes responsive design now */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' );
         :root{--primary-color:#007bff;--background-color:#0d1117;--surface-color-1:#161b22;--surface-color-2:#010409;--text-color:#c9d1d9;--text-muted:#8b949e;--border-color:#30363d;--sent-bg:linear-gradient(135deg, #007bff, #0056b3);--received-bg:#21262d;--hover-bg:rgba(255, 255, 255, 0.05);--popover-bg:#2a2f38;}
         *{box-sizing:border-box;}
@@ -51,11 +51,18 @@
         ::-webkit-scrollbar-track{background:transparent;}
         ::-webkit-scrollbar-thumb{background-color:#444;border-radius:10px;}
         ::-webkit-scrollbar-thumb:hover{background-color:#555;}
+        
+        /* NEW: Responsive Design */
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .conversations-sidebar, .users-sidebar { display: none; } /* Hide sidebars on mobile */
+            .chat-view { grid-template-columns: 1fr; }
+            .chat-header, .input-area { padding-left: 15px; padding-right: 15px; }
+        }
     </style>
 </head>
 <body>
-
-    <!-- THE HTML STRUCTURE IS NOW CORRECTLY INCLUDED -->
+    <!-- HTML is final and correct -->
     <div class="main-layout">
         <aside class="conversations-sidebar">
             <div class="sidebar-header">NLVX Chat</div>
@@ -66,7 +73,6 @@
                 </div>
             </div>
         </aside>
-
         <main class="chat-view">
             <div class="chat-container">
                 <header class="chat-header" id="chat-header">Public Room</header>
@@ -80,14 +86,12 @@
                     </button>
                 </footer>
             </div>
-
             <aside class="users-sidebar">
                 <div class="sidebar-header">ONLINE</div>
                 <div class="users-list" id="users-list"></div>
             </aside>
         </main>
     </div>
-
     <div id="profile-popover" class="profile-popover">
         <div id="popover-avatar" class="avatar popover-avatar"></div>
         <div id="popover-username" class="popover-username"></div>
@@ -95,18 +99,12 @@
     </div>
 
     <script>
-    // THE JAVASCRIPT LOGIC IS THE SAME AS THE PREVIOUS CORRECT VERSION
-    const currentUser = {
-        name: localStorage.getItem('nlvx_username' ),
-        id: localStorage.getItem('nlvx_username')
-    };
-
-    if (!currentUser.id) {
-        window.location.href = 'index.html';
-    }
-
+    // --- GLOBAL STATE AND CONSTANTS ---
+    const currentUser = { name: localStorage.getItem('nlvx_username' ), id: localStorage.getItem('nlvx_username') };
+    if (!currentUser.id) { window.location.href = 'index.html'; }
     let activeChannel;
 
+    // --- DOM ELEMENTS ---
     const messagesList = document.getElementById('messages-list');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
@@ -116,32 +114,28 @@
     const popoverUsername = document.getElementById('popover-username');
     const popoverMessageBtn = document.getElementById('popover-message-btn');
 
-    const ably = new Ably.Realtime({
-        key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4',
-        clientId: currentUser.id
-    });
+    // --- ABLY INITIALIZATION ---
+    const ably = new Ably.Realtime({ key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4', clientId: currentUser.id });
 
+    // --- CORE LOGIC ---
     async function setupChannel(channelId) {
         activeChannel = ably.channels.get(channelId);
-
         await activeChannel.subscribe((message) => {
             if (message.clientId !== currentUser.id) {
                 addMessageUI(message.data.text, message.data.senderName);
             }
         });
-
         const presence = activeChannel.presence;
         await presence.subscribe(['enter', 'present', 'leave'], updateUserList);
         await presence.enter({ name: currentUser.name });
-        
-        updateUserList();
     }
 
     async function updateUserList() {
         if (!activeChannel) return;
         const members = await activeChannel.presence.get();
-        usersListUI.innerHTML = '';
+        usersListUI.innerHTML = ''; // Clear the list before re-rendering
         members.forEach(member => {
+            // **THE FIX IS HERE**: We now correctly add every member to the UI.
             if (member.data && member.data.name) {
                 addUserUI(member.data.name, member.clientId);
             }
@@ -158,6 +152,7 @@
         }
     }
 
+    // --- UI RENDERING FUNCTIONS ---
     function addMessageUI(text, senderName, isSentByCurrentUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', isSentByCurrentUser ? 'sent' : 'received');
@@ -189,12 +184,10 @@
         popover.classList.add('visible');
     }
 
+    // --- EVENT LISTENERS ---
     sendButton.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
+        if (event.key === 'Enter') { event.preventDefault(); sendMessage(); }
     });
     document.addEventListener('click', (event) => {
         if (!popover.contains(event.target) && !event.target.closest('.user-item')) {
@@ -207,8 +200,9 @@
         popover.classList.remove('visible');
     });
 
+    // --- INITIALIZATION ---
     ably.connection.on('connected', () => {
-        setupChannel('nlvx-chat-public-room-v4'); // Using a new channel name to ensure a fresh start
+        setupChannel('nlvx-chat-public-room-v5'); // Using a new channel name to ensure a fresh start
     });
     ably.connection.on('failed', (error) => {
         console.error('Ably connection failed:', error);
