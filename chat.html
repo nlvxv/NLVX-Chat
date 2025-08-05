@@ -73,29 +73,30 @@
         .list-item-name { font-weight: 600; font-size: 1em; }
         .list-item-snippet { font-size: 0.85em; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .unread-badge { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background-color: var(--primary-color); color: white; font-size: 0.75em; font-weight: bold; padding: 2px 8px; border-radius: 12px; }
+        .list-section-header { color: var(--text-secondary); font-size: 0.8em; font-weight: 700; text-transform: uppercase; padding: 16px 8px 8px; }
 
         /* --- Chat View --- */
         .chat-view { display: grid; grid-template-columns: 1fr 280px; height: 100vh; }
         .chat-container { display: flex; flex-direction: column; height: 100%; background: var(--background-color); }
         .chat-header { display: flex; align-items: center; padding: 0 24px; height: 70px; border-bottom: 1px solid var(--card-border); z-index: 10; gap: 15px; position: relative; }
         .chat-header .sidebar-title { font-size: 1.2em; flex-grow: 1; }
-        .messages-area { flex-grow: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
-        .messages-list { display: flex; flex-direction: column; gap: 4px; margin-top: auto; }
+        .messages-area { flex-grow: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; transition: opacity 0.3s ease; }
+        .messages-list { display: flex; flex-direction: column; gap: 4px; }
         
-        /* --- Message Styling (Final Polish) --- */
-        .message { display: flex; align-items: flex-start; gap: 12px; max-width: 75%; opacity: 0; transform: translateY(15px); animation: messageFadeIn 0.5s forwards; position: relative; padding: 8px 12px; border-radius: 12px; transition: background-color 0.2s; }
+        /* --- Message Styling --- */
+        .message { display: flex; align-items: flex-start; gap: 12px; max-width: 75%; opacity: 0; transform: translateY(15px); animation: messageFadeIn 0.5s forwards; position: relative; padding: 8px 12px; border-radius: 12px; transition: background-color 0.2s; margin-top: 12px; }
         @keyframes messageFadeIn { to { opacity: 1; transform: translateY(0); } }
         .message:hover { background-color: var(--surface-primary); }
         .message:hover .message-actions { opacity: 1; transform: translateY(-50%) scale(1); }
         .message.sent { align-self: flex-end; flex-direction: row-reverse; }
-        .message .avatar { width: 40px; height: 40px; font-size: 1em; }
+        .message .avatar { width: 40px; height: 40px; font-size: 1em; cursor: pointer; }
         .message-body { display: flex; flex-direction: column; align-items: flex-start; }
         .message.sent .message-body { align-items: flex-end; }
         .message-content { padding: 10px 14px; border-radius: var(--border-radius); background: var(--surface-secondary); border: 1px solid var(--card-border); }
         .message.sent .message-content { background: var(--primary-color); border: none; color: white; }
         .message.received .message-content { border-top-left-radius: 4px; }
         .message.sent .message-content { border-top-right-radius: 4px; }
-        .message .username { font-weight: 600; font-size: 1em; margin-bottom: 6px; }
+        .message .username { font-weight: 600; font-size: 1em; margin-bottom: 6px; cursor: pointer; }
         .message-text { font-size: 1em; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; }
         .message-text a { color: #63b3ed; text-decoration: underline; }
         .message-actions { position: absolute; top: 50%; right: -5px; transform: translateY(-50%) scale(0.8); background-color: var(--surface-primary); border-radius: 8px; border: 1px solid var(--card-border); display: flex; gap: 4px; padding: 4px; opacity: 0; transition: all 0.2s; z-index: 5; }
@@ -131,6 +132,7 @@
         .modal-footer { padding: 24px; border-top: 1px solid var(--card-border); display: flex; justify-content: flex-end; gap: 12px; }
         .modal-button { padding: 10px 20px; border: none; font-size: 0.95em; font-weight: 600; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; }
         .modal-button:hover { transform: scale(1.05); }
+        .modal-button:active { transform: scale(0.98); }
         .modal-button.secondary { background-color: var(--surface-secondary); color: var(--text-primary); }
         .modal-button.primary { background: var(--primary-color); color: var(--text-primary); box-shadow: 0 2px 15px var(--glow-color); }
         
@@ -145,14 +147,27 @@
         .dropdown-item.danger:hover { color: var(--primary-color); }
 
         /* --- Users & Room Modals Tabs --- */
-        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; }
-        .tab-btn { flex: 1; background: none; border: none; color: var(--text-secondary); padding: 12px; font-size: 1em; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s ease; }
-        .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--primary-color); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; position: relative; }
+        .tab-btn { flex: 1; background: none; border: none; color: var(--text-secondary); padding: 12px; font-size: 1em; font-weight: 600; cursor: pointer; position: relative; z-index: 1; transition: color 0.3s ease; }
+        .tab-indicator { position: absolute; bottom: 0; height: 2px; background-color: var(--primary-color); transition: all 0.4s cubic-bezier(0.2, 1, 0.5, 1); }
+        .tab-content-container { position: relative; overflow: hidden; }
+        .tab-content { transition: transform 0.4s cubic-bezier(0.2, 1, 0.5, 1), opacity 0.4s; position: absolute; width: 100%; }
+        .tab-content:not(.active) { transform: translateX(30px); opacity: 0; pointer-events: none; }
+        .tab-content.active { transform: translateX(0); opacity: 1; position: relative; }
+        .tab-content.reverse:not(.active) { transform: translateX(-30px); }
         .empty-list-message { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
         .status-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-secondary); margin-left: auto; }
         .status-indicator.online { background-color: var(--online-color); }
+
+        /* --- Custom Toast / Notification System --- */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--surface-primary); color: var(--text-primary); padding: 15px 20px; border-radius: 10px; border-left: 4px solid var(--primary-color); box-shadow: 0 5px 20px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; transform: translateX(120%); animation: toast-in 0.5s forwards; }
+        .toast.error { border-left-color: var(--primary-color); }
+        .toast.success { border-left-color: var(--online-color); }
+        .toast-icon { font-size: 1.5em; }
+        .toast-message { font-weight: 500; }
+        @keyframes toast-in { to { transform: translateX(0); } }
+        @keyframes toast-out { to { transform: translateX(120%); } }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
@@ -163,6 +178,7 @@
 </head>
 <body>
     <canvas id="background-stars"></canvas>
+    <div id="toast-container"></div>
     
     <div class="main-layout">
         <aside class="conversations-sidebar sidebar">
@@ -211,6 +227,7 @@
                 <div class="sidebar-tabs">
                     <button class="tab-btn active" data-tab="online-list">Online</button>
                     <button class="tab-btn" data-tab="friends-list">Friends</button>
+                    <div class="tab-indicator"></div>
                 </div>
                 <div class="sidebar-list" id="online-list"></div>
                 <div class="sidebar-list" id="friends-list" style="display: none;"></div>
@@ -266,7 +283,7 @@
         onlineList: document.getElementById('online-list'),
         friendsList: document.getElementById('friends-list'),
         chatHeaderAvatar: document.getElementById('chat-header-avatar'),
-        chatHeaderTitle: document.getElementById('chat-header-title'),
+                chatHeaderTitle: document.getElementById('chat-header-title'),
         messagesArea: document.getElementById('messages-area'),
         messagesList: document.getElementById('messages-list'),
         messageInput: document.getElementById('message-input'),
@@ -284,6 +301,7 @@
         chatDropdownMenu: document.getElementById('chat-dropdown-menu'),
         leaveChatBtn: document.getElementById('leave-chat-btn'),
         sidebarTabs: document.querySelector('.users-sidebar .sidebar-tabs'),
+        toastContainer: document.getElementById('toast-container'),
     };
 
     // Inject modal HTML
@@ -295,8 +313,9 @@
         <div class="modal-header sidebar-tabs" style="margin-bottom: 0; padding: 0 24px;">
             <button class="tab-btn active" data-tab="create-room-tab">Create Room</button>
             <button class="tab-btn" data-tab="join-room-tab">Join Room</button>
+            <div class="tab-indicator"></div>
         </div>
-        <div class="modal-body">
+        <div class="modal-body tab-content-container">
             <div id="create-room-tab" class="tab-content active">
                 <div class="info-group"><label for="create-room-name">Room Name</label><input type="text" id="create-room-name" placeholder="My Awesome Room"></div>
                 <div class="info-group"><label for="create-room-pass">Create Password</label><input type="password" id="create-room-pass" placeholder="Keep it secret, keep it safe!"></div>
@@ -310,7 +329,6 @@
             </div>
         </div>
     </div>`;
-    elements.settingsModalBackdrop.innerHTML = `<div class="modal" id="settings-modal"><div class="modal-header"><h2 class="modal-title">Settings</h2><p class="modal-subtitle">Customize your profile.</p></div><div class="modal-body"><div class="info-group"><label for="my-username-input">Username</label><input id="my-username-input" type="text"></div><div class="info-group"><label>Avatar Color</label><div class="color-picker" id="color-picker"></div></div></div><footer class="modal-footer"><button class="modal-button secondary" id="settings-close-btn">Close</button><button class="modal-button primary" id="settings-save-btn">Save</button></footer></div>`;
     elements.settingsModalBackdrop.innerHTML = `<div class="modal" id="settings-modal"><div class="modal-header"><h2 class="modal-title">Settings</h2><p class="modal-subtitle">Customize your profile.</p></div><div class="modal-body"><div class="info-group"><label for="my-username-input">Username</label><input id="my-username-input" type="text"></div><div class="info-group"><label>Avatar Color</label><div class="color-picker" id="color-picker"></div></div></div><footer class="modal-footer"><button class="modal-button secondary" id="settings-close-btn">Close</button><button class="modal-button primary" id="settings-save-btn">Save</button></footer></div>`;
     elements.userProfileModalBackdrop.innerHTML = `<div class="modal" id="user-profile-modal"><div class="modal-header" style="padding-bottom: 0;"><div class="avatar" id="profile-modal-avatar" style="width: 80px; height: 80px; font-size: 2.5em; margin: -64px auto 16px; border-width: 4px;"></div><h2 class="modal-title" id="profile-modal-username"></h2></div><div class="modal-body" id="profile-modal-body" style="padding-top: 16px;"></div></div>`;
 
@@ -338,6 +356,18 @@
     let conversations = new Map();
     let friends = new Map();
     let typingTimeout;
+    let roomCheckChannel;
+
+    function showToast(message, type = 'error') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span class="toast-icon">${type === 'error' ? '!' : '✓'}</span><span class="toast-message">${message}</span>`;
+        elements.toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'toast-out 0.5s forwards';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
 
     function saveState() {
         const state = {
@@ -379,26 +409,37 @@
 
     function renderConversations() {
         elements.conversationsList.innerHTML = '';
-        const sortedConversations = Array.from(conversations.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        sortedConversations.forEach(conv => {
-            const item = document.createElement('div');
-            item.className = `list-item ${conv.id === activeChannelId ? 'active' : ''}`;
-            item.onclick = () => switchChannel(conv.id);
-            
-            const avatar = createAvatar(conv.user);
-            const details = document.createElement('div');
-            details.className = 'list-item-details';
-            details.innerHTML = `<div class="list-item-name">${conv.name}</div><div class="list-item-snippet">${conv.lastMessage}</div>`;
-            
-            item.append(avatar, details);
-            if (conv.unread > 0) {
-                const badge = document.createElement('span');
-                badge.className = 'unread-badge';
-                badge.textContent = conv.unread;
-                item.appendChild(badge);
-            }
-            elements.conversationsList.appendChild(item);
-        });
+        const dms = Array.from(conversations.values()).filter(c => c.id.startsWith('private-')).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        const rooms = Array.from(conversations.values()).filter(c => !c.id.startsWith('private-')).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        if (dms.length > 0) {
+            elements.conversationsList.innerHTML += `<div class="list-section-header">Direct Messages</div>`;
+            dms.forEach(conv => elements.conversationsList.appendChild(createConversationListItem(conv)));
+        }
+        if (rooms.length > 0) {
+            elements.conversationsList.innerHTML += `<div class="list-section-header">Rooms</div>`;
+            rooms.forEach(conv => elements.conversationsList.appendChild(createConversationListItem(conv)));
+        }
+    }
+
+    function createConversationListItem(conv) {
+        const item = document.createElement('div');
+        item.className = `list-item ${conv.id === activeChannelId ? 'active' : ''}`;
+        item.onclick = () => switchChannel(conv.id);
+        
+        const avatar = createAvatar(conv.user);
+        const details = document.createElement('div');
+        details.className = 'list-item-details';
+        details.innerHTML = `<div class="list-item-name">${conv.name}</div><div class="list-item-snippet">${conv.lastMessage}</div>`;
+        
+        item.append(avatar, details);
+        if (conv.unread > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'unread-badge';
+            badge.textContent = conv.unread;
+            item.appendChild(badge);
+        }
+        return item;
     }
 
     function renderUserLists() {
@@ -435,7 +476,9 @@
     }
 
     async function switchChannel(channelId) {
+        elements.messagesArea.style.opacity = 0;
         if (activeChannelId && channels.has(activeChannelId)) {
+            await channels.get(activeChannelId).presence.leave();
             await channels.get(activeChannelId).detach();
         }
         activeChannelId = channelId;
@@ -453,11 +496,13 @@
         renderConversations();
         loadMessages(channelId);
         await setupChannel(channelId);
+        setTimeout(() => { elements.messagesArea.style.opacity = 1; }, 50);
     }
 
     async function setupChannel(channelId) {
         if (channels.has(channelId)) {
             await channels.get(channelId).attach();
+            await channels.get(channelId).presence.enter(currentUser);
             return;
         }
         const channel = ably.channels.get(`chat:${channelId}`);
@@ -471,7 +516,7 @@
                 saveState();
             }
             saveMessage(channelId, msg.data);
-            addMessageUI(msg.data, channelId);
+            addMessageUI(msg.data);
         });
         channel.subscribe('delete_message', (msg) => {
             document.getElementById(msg.data.messageId)?.remove();
@@ -507,22 +552,14 @@
         return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
     }
 
-    function addMessageUI(data, channelId) {
-        if (channelId !== activeChannelId) {
-            const conv = conversations.get(channelId);
-            if (conv) {
-                conv.unread = (conv.unread || 0) + 1;
-                renderConversations();
-                if (document.hidden) showNotification(`New message in ${conv.name}`, data.text);
-            }
-            return;
-        }
+    function addMessageUI(data) {
         const isSent = data.sender.id === currentUser.id;
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         messageDiv.id = data.id;
 
         const avatar = createAvatar(data.sender);
+        avatar.onclick = () => showUserProfileModal(data.sender);
         
         const messageBody = document.createElement('div');
         messageBody.className = 'message-body';
@@ -531,6 +568,7 @@
         usernameSpan.className = 'username';
         usernameSpan.textContent = data.sender.name;
         usernameSpan.style.color = data.sender.color;
+        usernameSpan.onclick = () => showUserProfileModal(data.sender);
         messageBody.appendChild(usernameSpan);
 
         const messageContent = document.createElement('div');
@@ -551,13 +589,15 @@
         }
 
         messageDiv.append(avatar, messageBody);
-        elements.messagesList.prepend(messageDiv);
+        elements.messagesList.appendChild(messageDiv);
         elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight;
     }
 
-    function deleteMessage(messageId) {
-        if (!confirm('Are you sure you want to delete this message?')) return;
-        channels.get(activeChannelId).publish('delete_message', { messageId });
+    async function deleteMessage(messageId) {
+        const confirmed = await showConfirmation('Are you sure you want to delete this message?');
+        if (confirmed) {
+            channels.get(activeChannelId).publish('delete_message', { messageId });
+        }
     }
 
     function editMessage(messageId, oldText) {
@@ -576,17 +616,14 @@
 
     function loadMessages(channelId) {
         const history = JSON.parse(localStorage.getItem(`msg_${channelId}`) || '[]');
-        history.forEach(msg => addMessageUI(msg, channelId));
-    }
-
-    function showNotification(title, body) {
-        if (Notification.permission === 'granted') new Notification(title, { body });
+        history.forEach(msg => addMessageUI(msg));
     }
 
     function showModal(modalBackdrop) { modalBackdrop.classList.add('visible'); }
     function hideModal(modalBackdrop) { modalBackdrop.classList.remove('visible'); }
 
     function showUserProfileModal(user) {
+        if (user.id === currentUser.id) return; // Don't show modal for self
         const avatar = createAvatar(user);
         elements.profileModalAvatar.style.backgroundImage = avatar.style.backgroundImage;
         elements.profileModalAvatar.style.background = avatar.style.background;
@@ -612,8 +649,10 @@
     function toggleFriend(user) {
         if (friends.has(user.id)) {
             friends.delete(user.id);
+            showToast(`${user.name} removed from friends.`, 'success');
         } else {
             friends.set(user.id, user);
+            showToast(`${user.name} added to friends!`, 'success');
         }
         saveState();
         renderUserLists();
@@ -626,6 +665,32 @@
             saveState();
         }
         switchChannel(privateChannelId);
+    }
+
+    function showConfirmation(message) {
+        return new Promise(resolve => {
+            const modalHTML = `<div class="modal-backdrop visible" id="confirm-backdrop">
+                <div class="modal" style="transform: scale(1);">
+                    <div class="modal-body" style="text-align: center;">
+                        <p style="font-size: 1.1em; margin-bottom: 24px;">${message}</p>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="modal-button secondary" id="confirm-cancel" style="flex: 1;">Cancel</button>
+                            <button class="modal-button primary" id="confirm-ok" style="flex: 1;">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            const backdrop = document.getElementById('confirm-backdrop');
+            document.getElementById('confirm-ok').onclick = () => {
+                backdrop.remove();
+                resolve(true);
+            };
+            document.getElementById('confirm-cancel').onclick = () => {
+                backdrop.remove();
+                resolve(false);
+            };
+        });
     }
 
     // --- Event Listeners ---
@@ -651,38 +716,28 @@
     elements.createRoomBtn.onclick = () => {
         const roomName = elements.createRoomNameInput.value.trim();
         const roomPass = elements.createRoomPassInput.value.trim();
-        if (!roomName || !roomPass) return alert('Please enter a room name and password.');
+        if (!roomName || !roomPass) return showToast('Please enter a room name and password.');
         const newRoomId = `room_${roomName.replace(/\s+/g, '_')}_${Math.random().toString(36).substr(2, 5)}`;
         const roomIcon = elements.createRoomIconSelect.value;
-        conversations.set(newRoomId, { id: newRoomId, name: roomName, lastMessage: `You created the room.`, unread: 0, user: { name: roomName, icon: roomIcon, isRoom: true }, isProtected: true, password: roomPass, timestamp: Date.now() });
+        const newRoomData = { id: newRoomId, name: roomName, lastMessage: `You created the room.`, unread: 0, user: { name: roomName, icon: roomIcon, isRoom: true }, isProtected: true, password: roomPass, timestamp: Date.now() };
+        conversations.set(newRoomId, newRoomData);
         saveState();
+        roomCheckChannel.publish('room_created', newRoomData);
         switchChannel(newRoomId);
         hideModal(elements.roomModalBackdrop);
+        showToast(`Room "${roomName}" created!`, 'success');
     };
 
     elements.joinRoomBtn.onclick = () => {
         const roomName = elements.joinRoomNameInput.value.trim();
         const roomPass = elements.joinRoomPassInput.value.trim();
-        if (!roomName || !roomPass) return alert('Please enter the room name and password.');
-        
-        let foundRoom = null;
-        for (const conv of conversations.values()) {
-            if (conv.name === roomName && conv.isProtected && conv.password === roomPass) {
-                foundRoom = conv;
-                break;
-            }
-        }
-        if (foundRoom) {
-            switchChannel(foundRoom.id);
-            hideModal(elements.roomModalBackdrop);
-        } else {
-            alert('Room not found or password incorrect. Note: For this demo, you can only join rooms already in your local conversation history. Share the exact room name and password with a friend!');
-        }
+        if (!roomName || !roomPass) return showToast('Please enter the room name and password.');
+        roomCheckChannel.publish('request_room_join', { roomName, roomPass, requesterId: currentUser.id });
     };
 
     elements.settingsSaveBtn.onclick = async () => {
         const newName = elements.myUsernameInput.value.trim();
-        if (!newName) return alert('Username cannot be empty.');
+        if (!newName) return showToast('Username cannot be empty.');
         currentUser.name = newName;
         currentUser.color = document.querySelector('.color-swatch.selected').dataset.color;
         localStorage.setItem('nlvx_username', currentUser.name);
@@ -692,6 +747,7 @@
             await channels.get(activeChannelId).presence.update(currentUser);
         }
         hideModal(elements.settingsModalBackdrop);
+        showToast('Settings saved!', 'success');
     };
 
     elements.sendButton.onclick = () => {
@@ -719,8 +775,9 @@
     };
     document.addEventListener('click', () => elements.chatDropdownMenu.classList.remove('show'));
 
-    elements.leaveChatBtn.onclick = () => {
-        if (confirm(`Are you sure you want to leave "${conversations.get(activeChannelId).name}"? This will remove it from your list.`)) {
+    elements.leaveChatBtn.onclick = async () => {
+        const confirmed = await showConfirmation(`Are you sure you want to leave "${conversations.get(activeChannelId).name}"? This will remove it from your list.`);
+        if (confirmed) {
             channels.get(activeChannelId)?.detach();
             channels.delete(activeChannelId);
             conversations.delete(activeChannelId);
@@ -730,34 +787,80 @@
         }
     };
 
-    elements.sidebarTabs.addEventListener('click', (e) => {
-        if (e.target.classList.contains('tab-btn')) {
-            document.querySelector('.users-sidebar .tab-btn.active').classList.remove('active');
-            e.target.classList.add('active');
-            document.getElementById('online-list').style.display = 'none';
-            document.getElementById('friends-list').style.display = 'none';
-            document.getElementById(e.target.dataset.tab).style.display = 'flex';
+    function setupTabSlider(tabContainer) {
+        const tabs = tabContainer.querySelectorAll('.tab-btn');
+        const indicator = tabContainer.querySelector('.tab-indicator');
+        const contentContainer = tabContainer.nextElementSibling;
+
+        function moveIndicator(el) {
+            indicator.style.width = `${el.offsetWidth}px`;
+            indicator.style.left = `${el.offsetLeft}px`;
         }
-    });
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                const currentActive = tabContainer.querySelector('.active');
+                currentActive.classList.remove('active');
+                tab.classList.add('active');
+                moveIndicator(tab);
+
+                const currentContent = contentContainer.querySelector('.tab-content.active');
+                const newContent = contentContainer.querySelector(`#${tab.dataset.tab}`);
+                const newIndex = Array.from(tabs).indexOf(tab);
+                const oldIndex = Array.from(tabs).indexOf(currentActive);
+
+                contentContainer.querySelectorAll('.tab-content').forEach(c => c.classList.remove('reverse'));
+                if (newIndex < oldIndex) {
+                    newContent.classList.add('reverse');
+                }
+
+                currentContent.classList.remove('active');
+                newContent.classList.add('active');
+            });
+        });
+        moveIndicator(tabContainer.querySelector('.active'));
+    }
     
-    document.querySelector('#room-modal .sidebar-tabs').addEventListener('click', (e) => {
-        if (e.target.classList.contains('tab-btn')) {
-            document.querySelector('#room-modal .tab-btn.active').classList.remove('active');
-            e.target.classList.add('active');
-            document.querySelector('#room-modal .tab-content.active').classList.remove('active');
-            document.getElementById(e.target.dataset.tab).classList.add('active');
-        }
-    });
+    setupTabSlider(elements.sidebarTabs);
+    setupTabSlider(document.querySelector('#room-modal .sidebar-tabs'));
 
     // --- INITIALIZATION ---
     ably.connection.on('connected', async () => {
         loadState();
         updateSidebarProfile();
         renderConversations();
+        
+        // Setup global channel for room checks
+        roomCheckChannel = ably.channels.get('room-check');
+        roomCheckChannel.subscribe('room_created', (msg) => {
+            if (!conversations.has(msg.data.id)) {
+                conversations.set(msg.data.id, msg.data);
+                saveState();
+            }
+        });
+        roomCheckChannel.subscribe('request_room_join', (msg) => {
+            const room = conversations.get(msg.data.roomName.replace(/\s+/g, '_')); // Simplified check
+            for (const conv of conversations.values()) {
+                if (conv.name === msg.data.roomName && conv.isProtected && conv.password === msg.data.roomPass) {
+                    roomCheckChannel.publish(`join_response_${msg.data.requesterId}`, { success: true, roomData: conv });
+                    return;
+                }
+            }
+        });
+        roomCheckChannel.subscribe(`join_response_${currentUser.id}`, (msg) => {
+            if (msg.data.success) {
+                if (!conversations.has(msg.data.roomData.id)) {
+                    conversations.set(msg.data.roomData.id, msg.data.roomData);
+                    saveState();
+                }
+                switchChannel(msg.data.roomData.id);
+                hideModal(elements.roomModalBackdrop);
+            } else {
+                showToast('Room not found or password incorrect.');
+            }
+        });
+
         await switchChannel(localStorage.getItem('nlvx_lastChannel') || 'public-room');
-        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            Notification.requestPermission();
-        }
     });
 
     ably.connection.on('failed', (err) => console.error('Ably connection failed:', err));
@@ -766,3 +869,4 @@
     </script>
 </body>
 </html>
+
