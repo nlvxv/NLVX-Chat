@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NLVX Chat - The Universe Awaits</title>
+    <title>NLVX Chat</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,8 +124,8 @@
         .modal-body { padding: 24px; }
         .info-group { margin-bottom: 20px; }
         .info-group label { display: block; font-size: 0.8em; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
-        .info-group p, .info-group input, .info-group select { font-size: 1em; color: var(--text-primary); background-color: var(--surface-primary); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; width: 100%; }
-        .info-group input:focus, .info-group select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 15px var(--glow-color); }
+        .info-group p, .info-group input { font-size: 1em; color: var(--text-primary); background-color: var(--surface-primary); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; width: 100%; }
+        .info-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 15px var(--glow-color); }
         .color-picker { display: flex; gap: 12px; margin-top: 10px; justify-content: center; }
         .color-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; }
         .color-swatch.selected { border-color: white; transform: scale(1.15); }
@@ -136,6 +136,15 @@
         .modal-button.secondary { background-color: var(--surface-secondary); color: var(--text-primary); }
         .modal-button.primary { background: var(--primary-color); color: var(--text-primary); box-shadow: 0 2px 15px var(--glow-color); }
         
+        /* --- Custom Select (Room Icon) --- */
+        .custom-select-wrapper { position: relative; }
+        .custom-select-trigger { font-size: 1em; color: var(--text-primary); background-color: var(--surface-primary); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; width: 100%; display: flex; align-items: center; cursor: pointer; }
+        .custom-select-trigger::after { content: '▼'; font-size: 0.7em; margin-left: auto; }
+        .custom-options { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface-secondary); border: 1px solid var(--card-border); border-radius: 10px; z-index: 2; max-height: 200px; overflow-y: auto; display: none; }
+        .custom-options.open { display: block; }
+        .custom-option { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .custom-option:hover, .custom-option.selected { background-color: var(--primary-color); }
+
         /* --- Dropdown Menu --- */
         .dropdown { position: relative; }
         #chat-menu-btn { background: none; border: 1px solid transparent; color: var(--text-secondary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
@@ -239,6 +248,7 @@
     <div class="modal-backdrop" id="room-modal-backdrop"></div>
     <div class="modal-backdrop" id="settings-modal-backdrop"></div>
     <div class="modal-backdrop" id="user-profile-modal-backdrop"></div>
+    <div class="modal-backdrop" id="edit-message-modal-backdrop"></div>
 
     <script>
     // Star background animation
@@ -262,7 +272,7 @@
         requestAnimationFrame(animateStars);
     }
     animateStars();
-    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
 
     // --- Main App Logic ---
     const savedUsername = localStorage.getItem('nlvx_username');
@@ -283,7 +293,7 @@
         onlineList: document.getElementById('online-list'),
         friendsList: document.getElementById('friends-list'),
         chatHeaderAvatar: document.getElementById('chat-header-avatar'),
-                chatHeaderTitle: document.getElementById('chat-header-title'),
+        chatHeaderTitle: document.getElementById('chat-header-title'),
         messagesArea: document.getElementById('messages-area'),
         messagesList: document.getElementById('messages-list'),
         messageInput: document.getElementById('message-input'),
@@ -295,6 +305,7 @@
         roomModalBackdrop: document.getElementById('room-modal-backdrop'),
         settingsModalBackdrop: document.getElementById('settings-modal-backdrop'),
         userProfileModalBackdrop: document.getElementById('user-profile-modal-backdrop'),
+        editMessageModalBackdrop: document.getElementById('edit-message-modal-backdrop'),
         typingIndicator: document.getElementById('typing-indicator'),
         chatActionsDropdown: document.getElementById('chat-actions-dropdown'),
         chatMenuBtn: document.getElementById('chat-menu-btn'),
@@ -319,7 +330,7 @@
             <div id="create-room-tab" class="tab-content active">
                 <div class="info-group"><label for="create-room-name">Room Name</label><input type="text" id="create-room-name" placeholder="My Awesome Room"></div>
                 <div class="info-group"><label for="create-room-pass">Create Password</label><input type="password" id="create-room-pass" placeholder="Keep it secret, keep it safe!"></div>
-                <div class="info-group"><label for="create-room-icon">Room Icon</label><select id="create-room-icon">${Object.entries(roomIcons).map(([i, n]) => `<option value="${i}">${i} ${n}</option>`).join('')}</select></div>
+                <div class="info-group"><label for="create-room-icon">Room Icon</label><div class="custom-select-wrapper"><div class="custom-select-trigger"><span>🌍</span> Globe</div><div class="custom-options"></div></div></div>
                 <button class="modal-button primary" id="create-room-btn" style="width:100%;">Create New Room</button>
             </div>
             <div id="join-room-tab" class="tab-content">
@@ -331,12 +342,12 @@
     </div>`;
     elements.settingsModalBackdrop.innerHTML = `<div class="modal" id="settings-modal"><div class="modal-header"><h2 class="modal-title">Settings</h2><p class="modal-subtitle">Customize your profile.</p></div><div class="modal-body"><div class="info-group"><label for="my-username-input">Username</label><input id="my-username-input" type="text"></div><div class="info-group"><label>Avatar Color</label><div class="color-picker" id="color-picker"></div></div></div><footer class="modal-footer"><button class="modal-button secondary" id="settings-close-btn">Close</button><button class="modal-button primary" id="settings-save-btn">Save</button></footer></div>`;
     elements.userProfileModalBackdrop.innerHTML = `<div class="modal" id="user-profile-modal"><div class="modal-header" style="padding-bottom: 0;"><div class="avatar" id="profile-modal-avatar" style="width: 80px; height: 80px; font-size: 2.5em; margin: -64px auto 16px; border-width: 4px;"></div><h2 class="modal-title" id="profile-modal-username"></h2></div><div class="modal-body" id="profile-modal-body" style="padding-top: 16px;"></div></div>`;
+    elements.editMessageModalBackdrop.innerHTML = `<div class="modal" id="edit-message-modal"><div class="modal-header"><h2 class="modal-title">Edit Message</h2></div><div class="modal-body"><div class="info-group"><input id="edit-message-input" type="text"></div></div><footer class="modal-footer"><button class="modal-button secondary" id="edit-message-cancel-btn">Cancel</button><button class="modal-button primary" id="edit-message-save-btn">Save</button></footer></div>`;
 
     // Re-assign elements created dynamically
     Object.assign(elements, {
         createRoomNameInput: document.getElementById('create-room-name'),
         createRoomPassInput: document.getElementById('create-room-pass'),
-        createRoomIconSelect: document.getElementById('create-room-icon'),
         createRoomBtn: document.getElementById('create-room-btn'),
         joinRoomNameInput: document.getElementById('join-room-name'),
         joinRoomPassInput: document.getElementById('join-room-pass'),
@@ -348,15 +359,18 @@
         profileModalAvatar: document.getElementById('profile-modal-avatar'),
         profileModalUsername: document.getElementById('profile-modal-username'),
         profileModalBody: document.getElementById('profile-modal-body'),
+        editMessageInput: document.getElementById('edit-message-input'),
+        editMessageCancelBtn: document.getElementById('edit-message-cancel-btn'),
+        editMessageSaveBtn: document.getElementById('edit-message-save-btn'),
     });
 
     let activeChannelId = 'public-room';
     let channels = new Map();
-    let membersMap = new Map();
+    let allUsers = new Map();
     let conversations = new Map();
     let friends = new Map();
     let typingTimeout;
-    let roomCheckChannel;
+    let globalPresenceChannel;
 
     function showToast(message, type = 'error') {
         const toast = document.createElement('div');
@@ -446,16 +460,16 @@
         elements.onlineList.innerHTML = '';
         elements.friendsList.innerHTML = '';
 
-        const onlineMembers = Array.from(membersMap.values()).filter(m => m.id !== currentUser.id);
-        if (onlineMembers.length > 0) {
-            onlineMembers.forEach(user => elements.onlineList.appendChild(createUserListItem(user, true)));
+        const onlineUsers = Array.from(allUsers.values()).filter(m => m.id !== currentUser.id);
+        if (onlineUsers.length > 0) {
+            onlineUsers.forEach(user => elements.onlineList.appendChild(createUserListItem(user, true)));
         } else {
             elements.onlineList.innerHTML = `<div class="empty-list-message">It's quiet... too quiet.</div>`;
         }
 
         const friendMembers = Array.from(friends.values());
         if (friendMembers.length > 0) {
-            friendMembers.forEach(user => elements.friendsList.appendChild(createUserListItem(user, membersMap.has(user.id))));
+            friendMembers.forEach(user => elements.friendsList.appendChild(createUserListItem(user, allUsers.has(user.id))));
         } else {
             elements.friendsList.innerHTML = `<div class="empty-list-message">Find friends in the Online tab!</div>`;
         }
@@ -501,9 +515,7 @@
 
     async function setupChannel(channelId) {
         if (channels.has(channelId)) {
-            await channels.get(channelId).attach();
-            await channels.get(channelId).presence.enter(currentUser);
-            return;
+            await channels.get(channelId).detach();
         }
         const channel = ably.channels.get(`chat:${channelId}`);
         channels.set(channelId, channel);
@@ -527,19 +539,9 @@
         });
 
         const presence = channel.presence;
-        presence.subscribe(['enter', 'leave', 'update'], async () => {
-            const presenceMembers = await presence.get();
-            membersMap.clear();
-            let typingUsers = [];
-            presenceMembers.forEach(m => {
-                membersMap.set(m.clientId, m.data);
-                if (m.data.isTyping && m.clientId !== currentUser.id) {
-                    typingUsers.push(m.data.name);
-                }
-            });
-            renderUserLists();
-            if (typingUsers.length > 0) {
-                elements.typingIndicator.textContent = `${typingUsers.join(', ')} is typing...`;
+        presence.subscribe('update', (member) => {
+            if (member.clientId !== currentUser.id && member.data.isTyping) {
+                elements.typingIndicator.textContent = `${member.data.name} is typing...`;
             } else {
                 elements.typingIndicator.textContent = '';
             }
@@ -601,10 +603,17 @@
     }
 
     function editMessage(messageId, oldText) {
-        const newText = prompt('Edit your message:', oldText);
-        if (newText && newText.trim() !== '' && newText !== oldText) {
-            channels.get(activeChannelId).publish('edit_message', { messageId, newText: newText.trim() });
-        }
+        showModal(elements.editMessageModalBackdrop);
+        elements.editMessageInput.value = oldText;
+        elements.editMessageInput.focus();
+        elements.editMessageSaveBtn.onclick = () => {
+            const newText = elements.editMessageInput.value.trim();
+            if (newText && newText !== oldText) {
+                channels.get(activeChannelId).publish('edit_message', { messageId, newText });
+            }
+            hideModal(elements.editMessageModalBackdrop);
+        };
+        elements.editMessageCancelBtn.onclick = () => hideModal(elements.editMessageModalBackdrop);
     }
 
     function saveMessage(channelId, messageData) {
@@ -623,7 +632,7 @@
     function hideModal(modalBackdrop) { modalBackdrop.classList.remove('visible'); }
 
     function showUserProfileModal(user) {
-        if (user.id === currentUser.id) return; // Don't show modal for self
+        if (user.id === currentUser.id) return;
         const avatar = createAvatar(user);
         elements.profileModalAvatar.style.backgroundImage = avatar.style.backgroundImage;
         elements.profileModalAvatar.style.background = avatar.style.background;
@@ -708,7 +717,7 @@
         showModal(elements.settingsModalBackdrop);
     };
 
-    [elements.roomModalBackdrop, elements.settingsModalBackdrop, elements.userProfileModalBackdrop].forEach(modal => {
+    [elements.roomModalBackdrop, elements.settingsModalBackdrop, elements.userProfileModalBackdrop, elements.editMessageModalBackdrop].forEach(modal => {
         modal.onclick = (e) => { if(e.target === modal) hideModal(modal); };
     });
     elements.settingsCloseBtn.onclick = () => hideModal(elements.settingsModalBackdrop);
@@ -718,11 +727,11 @@
         const roomPass = elements.createRoomPassInput.value.trim();
         if (!roomName || !roomPass) return showToast('Please enter a room name and password.');
         const newRoomId = `room_${roomName.replace(/\s+/g, '_')}_${Math.random().toString(36).substr(2, 5)}`;
-        const roomIcon = elements.createRoomIconSelect.value;
+        const roomIcon = document.querySelector('.custom-select-trigger').dataset.value;
         const newRoomData = { id: newRoomId, name: roomName, lastMessage: `You created the room.`, unread: 0, user: { name: roomName, icon: roomIcon, isRoom: true }, isProtected: true, password: roomPass, timestamp: Date.now() };
         conversations.set(newRoomId, newRoomData);
         saveState();
-        roomCheckChannel.publish('room_created', newRoomData);
+        globalPresenceChannel.publish('room_created', newRoomData);
         switchChannel(newRoomId);
         hideModal(elements.roomModalBackdrop);
         showToast(`Room "${roomName}" created!`, 'success');
@@ -732,7 +741,7 @@
         const roomName = elements.joinRoomNameInput.value.trim();
         const roomPass = elements.joinRoomPassInput.value.trim();
         if (!roomName || !roomPass) return showToast('Please enter the room name and password.');
-        roomCheckChannel.publish('request_room_join', { roomName, roomPass, requesterId: currentUser.id });
+        globalPresenceChannel.publish('request_room_join', { roomName, roomPass, requesterId: currentUser.id });
     };
 
     elements.settingsSaveBtn.onclick = async () => {
@@ -743,9 +752,7 @@
         localStorage.setItem('nlvx_username', currentUser.name);
         localStorage.setItem('nlvx_usercolor', currentUser.color);
         updateSidebarProfile();
-        if (channels.has(activeChannelId)) {
-            await channels.get(activeChannelId).presence.update(currentUser);
-        }
+        await globalPresenceChannel.presence.update(currentUser);
         hideModal(elements.settingsModalBackdrop);
         showToast('Settings saved!', 'success');
     };
@@ -821,8 +828,38 @@
         moveIndicator(tabContainer.querySelector('.active'));
     }
     
+    function setupCustomSelect() {
+        const wrapper = document.querySelector('.custom-select-wrapper');
+        const trigger = wrapper.querySelector('.custom-select-trigger');
+        const optionsContainer = wrapper.querySelector('.custom-options');
+        
+        optionsContainer.innerHTML = Object.entries(roomIcons).map(([icon, name]) => 
+            `<div class="custom-option" data-value="${icon}"><span>${icon}</span> ${name}</div>`
+        ).join('');
+
+        trigger.addEventListener('click', () => optionsContainer.classList.toggle('open'));
+        
+        optionsContainer.querySelectorAll('.custom-option').forEach(option => {
+                        option.addEventListener('click', () => {
+                const selected = optionsContainer.querySelector('.selected');
+                if (selected) selected.classList.remove('selected');
+                option.classList.add('selected');
+                trigger.innerHTML = `<span>${option.dataset.value}</span> ${option.textContent.trim().split(' ').slice(1).join(' ')}`;
+                trigger.dataset.value = option.dataset.value;
+                optionsContainer.classList.remove('open');
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) {
+                optionsContainer.classList.remove('open');
+            }
+        });
+    }
+
     setupTabSlider(elements.sidebarTabs);
     setupTabSlider(document.querySelector('#room-modal .sidebar-tabs'));
+    setupCustomSelect();
 
     // --- INITIALIZATION ---
     ably.connection.on('connected', async () => {
@@ -830,24 +867,31 @@
         updateSidebarProfile();
         renderConversations();
         
-        // Setup global channel for room checks
-        roomCheckChannel = ably.channels.get('room-check');
-        roomCheckChannel.subscribe('room_created', (msg) => {
+        // Setup global channel for presence and room checks
+        globalPresenceChannel = ably.channels.get('global-presence');
+        
+        globalPresenceChannel.presence.subscribe(['enter', 'leave', 'update'], async () => {
+            const members = await globalPresenceChannel.presence.get();
+            allUsers.clear();
+            members.forEach(m => allUsers.set(m.clientId, m.data));
+            renderUserLists();
+        });
+
+        globalPresenceChannel.subscribe('room_created', (msg) => {
             if (!conversations.has(msg.data.id)) {
                 conversations.set(msg.data.id, msg.data);
                 saveState();
             }
         });
-        roomCheckChannel.subscribe('request_room_join', (msg) => {
-            const room = conversations.get(msg.data.roomName.replace(/\s+/g, '_')); // Simplified check
+        globalPresenceChannel.subscribe('request_room_join', (msg) => {
             for (const conv of conversations.values()) {
                 if (conv.name === msg.data.roomName && conv.isProtected && conv.password === msg.data.roomPass) {
-                    roomCheckChannel.publish(`join_response_${msg.data.requesterId}`, { success: true, roomData: conv });
+                    globalPresenceChannel.publish(`join_response_${msg.data.requesterId}`, { success: true, roomData: conv });
                     return;
                 }
             }
         });
-        roomCheckChannel.subscribe(`join_response_${currentUser.id}`, (msg) => {
+        globalPresenceChannel.subscribe(`join_response_${currentUser.id}`, (msg) => {
             if (msg.data.success) {
                 if (!conversations.has(msg.data.roomData.id)) {
                     conversations.set(msg.data.roomData.id, msg.data.roomData);
@@ -860,11 +904,15 @@
             }
         });
 
+        await globalPresenceChannel.presence.enter(currentUser);
         await switchChannel(localStorage.getItem('nlvx_lastChannel') || 'public-room');
     });
 
     ably.connection.on('failed', (err) => console.error('Ably connection failed:', err));
-    window.onbeforeunload = () => localStorage.setItem('nlvx_lastChannel', activeChannelId);
+    window.onbeforeunload = () => {
+        localStorage.setItem('nlvx_lastChannel', activeChannelId);
+        // Note: Ably automatically handles presence on disconnect/close
+    };
 
     </script>
 </body>
