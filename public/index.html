@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Welcome to NLVX Chat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +24,7 @@
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
@@ -33,8 +34,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            overflow-x: hidden;
             padding: 20px;
         }
         
@@ -121,6 +122,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 5px 20px var(--glow-color);
             font-family: var(--font-main);
+            touch-action: manipulation;
         }
         
         #join-button:hover { 
@@ -138,21 +140,20 @@
             transform: none;
         }
 
-        /* === RESPONSIVE DESIGN === */
-        
-        /* Tablet */
+        /* Mobile Optimizations */
         @media (max-width: 768px) {
             body {
                 padding: 15px;
             }
             
             .login-container {
-                padding: 30px;
-                max-width: 90%;
+                padding: 30px 25px;
+                max-width: 100%;
+                border-radius: 20px;
             }
             
             .login-title {
-                font-size: 2.2em;
+                font-size: 2em;
             }
             
             .login-subtitle {
@@ -162,7 +163,7 @@
             
             #username-input {
                 padding: 14px 18px;
-                font-size: 1.05em;
+                font-size: 16px; /* Prevents zoom on iOS */
             }
             
             #join-button {
@@ -171,22 +172,17 @@
             }
         }
 
-        /* Mobile */
         @media (max-width: 480px) {
             body {
                 padding: 10px;
-                align-items: flex-start;
-                padding-top: 15vh;
             }
             
             .login-container {
                 padding: 25px 20px;
-                max-width: 100%;
-                border-radius: 20px;
             }
             
             .login-title {
-                font-size: 1.9em;
+                font-size: 1.8em;
                 margin-bottom: 8px;
             }
             
@@ -198,7 +194,7 @@
             
             #username-input {
                 padding: 12px 16px;
-                font-size: 1em;
+                font-size: 16px;
                 border-radius: 10px;
             }
             
@@ -210,28 +206,17 @@
             }
         }
 
-        /* Very Small Mobile */
         @media (max-width: 360px) {
             .login-container {
                 padding: 20px 15px;
             }
             
             .login-title {
-                font-size: 1.7em;
+                font-size: 1.6em;
             }
             
             .login-subtitle {
                 font-size: 0.85em;
-            }
-            
-            #username-input {
-                padding: 10px 14px;
-                font-size: 0.95em;
-            }
-            
-            #join-button {
-                padding: 10px;
-                font-size: 0.95em;
             }
         }
     </style>
@@ -251,7 +236,6 @@
         const usernameInput = document.getElementById('username-input');
         const joinButton = document.getElementById('join-button');
         
-        // Load saved username with error handling
         try {
             const savedUsername = localStorage.getItem('nlvx_username');
             if (savedUsername) { 
@@ -275,7 +259,6 @@
                 return;
             }
             
-            // Disable button to prevent double submission
             joinButton.disabled = true;
             
             try {
@@ -288,7 +271,6 @@
             }
         });
         
-        // Star background animation
         const canvas = document.getElementById('background-stars');
         const ctx = canvas.getContext('2d');
         
@@ -304,7 +286,7 @@
         
         function initStars() {
             stars = [];
-            const starCount = window.innerWidth < 768 ? 100 : 150; // Fewer stars on mobile for performance
+            const starCount = window.innerWidth < 768 ? 80 : 150;
             for (let i = 0; i < starCount; i++) { 
                 stars.push({ 
                     x: Math.random() * canvas.width, 
@@ -344,9 +326,6 @@
         }
         
         animateStars();
-        
-        console.log('NLVX Chat - Responsive Login Page Loaded');
     </script>
 </body>
 </html>
-
