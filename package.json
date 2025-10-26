@@ -4,7 +4,7 @@
   "description": "NLVX Chat Application with Ably",
   "main": "index.js",
   "scripts": {
-    "dev": "vercel dev",
+    "start": "node api/auth.js",
     "deploy": "vercel --prod"
   },
   "dependencies": {
