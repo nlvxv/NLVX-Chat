@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NLVX Chat</title>
+    <title>NLVX Chat Enhanced</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +41,6 @@
         #background-stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         .main-layout { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
 
-        /* --- Sidebars --- */
         .sidebar { background-color: var(--surface-primary); display: flex; flex-direction: column; padding: 16px; }
         .conversations-sidebar { border-right: 1px solid var(--card-border); }
         .users-sidebar { border-left: 1px solid var(--card-border); }
@@ -57,7 +56,6 @@
         #settings-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.3s ease; }
         #settings-btn:hover { background-color: var(--card-background); color: var(--text-primary); transform: rotate(45deg); }
 
-        /* --- List Items --- */
         .list-item { display: flex; align-items: center; padding: 12px; cursor: pointer; user-select: none; position: relative; border-radius: 12px; border: 1px solid transparent; transition: all 0.3s ease; }
         .list-item:hover { background-color: var(--card-background); border-color: var(--card-border); }
         .list-item.active { background: linear-gradient(90deg, var(--secondary-color), var(--primary-color)); box-shadow: 0 4px 20px var(--glow-color); }
@@ -72,18 +70,50 @@
         .list-item-details { flex-grow: 1; overflow: hidden; }
         .list-item-name { font-weight: 600; font-size: 1em; }
         .list-item-snippet { font-size: 0.85em; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .unread-badge { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background-color: var(--primary-color); color: white; font-size: 0.75em; font-weight: bold; padding: 2px 8px; border-radius: 12px; }
+        .unread-badge { 
+            position: absolute; 
+            right: 12px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            background: linear-gradient(135deg, #e53e3e, #b91c1c);
+            color: white; 
+            font-size: 0.7em; 
+            font-weight: 700; 
+            padding: 3px 8px; 
+            border-radius: 12px; 
+            box-shadow: 0 0 15px rgba(229, 62, 62, 0.6);
+            animation: pulse-badge 2s infinite;
+        }
+        @keyframes pulse-badge {
+            0%, 100% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.1); }
+        }
         .list-section-header { color: var(--text-secondary); font-size: 0.8em; font-weight: 700; text-transform: uppercase; padding: 16px 8px 8px; }
 
-        /* --- Chat View --- */
         .chat-view { display: grid; grid-template-columns: 1fr 280px; height: 100vh; }
         .chat-container { display: flex; flex-direction: column; height: 100%; background: var(--background-color); overflow: hidden; }
         .chat-header { display: flex; align-items: center; padding: 0 24px; height: 70px; border-bottom: 1px solid var(--card-border); z-index: 10; gap: 15px; position: relative; }
         .chat-header .sidebar-title { font-size: 1.2em; flex-grow: 1; }
-        .messages-area { flex-grow: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; transition: opacity 0.3s ease; }
+        .messages-area { flex-grow: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; transition: opacity 0.3s ease; position: relative; }
         .messages-list { display: flex; flex-direction: column; gap: 4px; }
         
-        /* --- Message Styling --- */
+        .load-more-btn {
+            align-self: center;
+            background: var(--surface-secondary);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 10px 0;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        .load-more-btn:hover {
+            background: var(--primary-color);
+            transform: scale(1.05);
+        }
+
         .message { display: flex; align-items: flex-start; gap: 12px; max-width: 75%; opacity: 0; transform: translateY(15px); animation: messageFadeIn 0.5s forwards; position: relative; padding: 8px 12px; border-radius: 12px; transition: background-color 0.2s; margin-top: 12px; }
         @keyframes messageFadeIn { to { opacity: 1; transform: translateY(0); } }
         .message:hover { background-color: var(--surface-primary); }
@@ -104,7 +134,20 @@
         .message-actions button { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; }
         .message-actions button:hover { color: var(--text-primary); }
 
-        /* --- Reply Feature Styling --- */
+        .message-attachment {
+            margin-top: 8px;
+        }
+        .message-attachment img {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .message-attachment img:hover {
+            transform: scale(1.02);
+        }
+
         .reply-preview { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background-color: var(--surface-secondary); border-radius: 10px 10px 0 0; border-bottom: 1px solid var(--card-border); }
         .reply-content { flex-grow: 1; border-left: 3px solid var(--primary-color); padding-left: 10px; overflow: hidden; }
         .reply-content .sender { font-weight: 600; font-size: 0.9em; color: var(--primary-color); }
@@ -117,16 +160,44 @@
         .message-replied-to .sender { font-weight: 600; font-size: 0.85em; color: var(--primary-color); }
         .message-replied-to .text { font-size: 0.8em; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: 2.4em; }
         
-        /* --- Input Area --- */
         .input-area { padding: 16px 24px; border-top: 1px solid var(--card-border); }
         .typing-indicator { height: 20px; font-size: 0.85em; color: var(--text-secondary); padding-left: 10px; margin-bottom: 8px; font-style: italic; }
         .input-controls { display: flex; gap: 12px; align-items: center; background-color: var(--surface-primary); padding: 8px; border-radius: 50px; border: 1px solid var(--card-border); }
         #message-input { flex-grow: 1; border: none; background-color: transparent; color: var(--text-primary); font-size: 1em; padding: 10px 12px; font-family: var(--font-main); }
         #message-input:focus { outline: none; }
-        #send-button { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: none; background: var(--primary-color); color: white; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; flex-shrink: 0; box-shadow: 0 2px 15px var(--glow-color); }
-        #send-button:hover { transform: scale(1.1) rotate(15deg); box-shadow: 0 4px 20px var(--glow-color); }
         
-        /* --- Modals --- */
+        .input-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .input-btn:hover {
+            background: var(--card-background);
+            color: var(--text-primary);
+        }
+        
+        #send-button { 
+            width: 42px; 
+            height: 42px; 
+            background: var(--primary-color); 
+            color: white; 
+            box-shadow: 0 2px 15px var(--glow-color); 
+        }
+        #send-button:hover { 
+            transform: scale(1.1) rotate(15deg); 
+            box-shadow: 0 4px 20px var(--glow-color);
+            background: var(--primary-color);
+            color: white;
+        }
+        
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(10, 2, 19, 0.7); backdrop-filter: blur(10px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
         .modal-backdrop.visible { opacity: 1; pointer-events: auto; }
         .modal { background: var(--card-background); border: 1px solid var(--card-border); width: 90%; max-width: 420px; border-radius: var(--border-radius); box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3); transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.2, 1.5, 0.5, 1); }
@@ -149,7 +220,6 @@
         .modal-button.secondary { background-color: var(--surface-secondary); color: var(--text-primary); }
         .modal-button.primary { background: var(--primary-color); color: var(--text-primary); box-shadow: 0 2px 15px var(--glow-color); }
         
-        /* --- Custom Select (Room Icon) --- */
         .custom-select-wrapper { position: relative; }
         .custom-select-trigger { font-size: 1em; color: var(--text-primary); background-color: var(--surface-primary); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; width: 100%; display: flex; align-items: center; cursor: pointer; }
         .custom-select-trigger::after { content: '▼'; font-size: 0.7em; margin-left: auto; }
@@ -158,7 +228,6 @@
         .custom-option { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
         .custom-option:hover, .custom-option.selected { background-color: var(--primary-color); }
 
-        /* --- Dropdown Menu --- */
         .dropdown { position: relative; }
         #chat-menu-btn { background: none; border: 1px solid transparent; color: var(--text-secondary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
         #chat-menu-btn:hover { background-color: var(--surface-secondary); border-color: var(--card-border); }
@@ -168,7 +237,6 @@
         .dropdown-item:hover { background-color: var(--card-background); color: var(--text-primary); }
         .dropdown-item.danger:hover { color: var(--primary-color); }
 
-        /* --- Users & Room Modals Tabs --- */
         .sidebar-tabs { display: flex; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; position: relative; }
         .tab-btn { flex: 1; background: none; border: none; color: var(--text-secondary); padding: 12px; font-size: 1em; font-weight: 600; cursor: pointer; position: relative; z-index: 1; transition: color 0.3s ease; }
         .tab-indicator { position: absolute; bottom: 0; height: 2px; background-color: var(--primary-color); transition: all 0.4s cubic-bezier(0.2, 1, 0.5, 1); }
@@ -181,7 +249,6 @@
         .status-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-secondary); margin-left: auto; }
         .status-indicator.online { background-color: var(--online-color); }
 
-        /* --- Custom Toast / Notification System --- */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { background: var(--surface-primary); color: var(--text-primary); padding: 15px 20px; border-radius: 10px; border-left: 4px solid var(--primary-color); box-shadow: 0 5px 20px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; transform: translateX(120%); animation: toast-in 0.5s forwards; }
         .toast.error { border-left-color: var(--primary-color); }
@@ -191,7 +258,6 @@
         @keyframes toast-in { to { transform: translateX(0); } }
         @keyframes toast-out { to { transform: translateX(120%); } }
 
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); border-radius: 10px; }
@@ -201,6 +267,7 @@
 <body>
     <canvas id="background-stars"></canvas>
     <div id="toast-container"></div>
+    <input type="file" id="file-input" style="display: none;" accept="image/png,image/jpeg,image/gif,image/webp">
     
     <div class="main-layout">
         <aside class="conversations-sidebar sidebar">
@@ -249,8 +316,11 @@
                         </button>
                     </div>
                     <div class="input-controls">
+                        <button class="input-btn" id="attach-btn" title="Attach Image">
+                            <svg fill="currentColor" viewBox="0 0 20 20" width="20" height="20"><path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clip-rule="evenodd"></path></svg>
+                        </button>
                         <input type="text" id="message-input" placeholder="Message in Public Room..." autocomplete="off">
-                        <button id="send-button">
+                        <button id="send-button" class="input-btn">
                             <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
                         </button>
                     </div>
@@ -268,14 +338,281 @@
         </main>
     </div>
 
-    <!-- Modals -->
     <div class="modal-backdrop" id="room-modal-backdrop"></div>
     <div class="modal-backdrop" id="settings-modal-backdrop"></div>
     <div class="modal-backdrop" id="user-profile-modal-backdrop"></div>
     <div class="modal-backdrop" id="edit-message-modal-backdrop"></div>
 
     <script>
-    // Star background animation
+    // ============================================
+    // IndexedDB Manager
+    // ============================================
+    class ChatDB {
+        constructor() {
+            this.dbName = 'NLVXChatDB';
+            this.version = 1;
+            this.db = null;
+        }
+
+        async init() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(this.dbName, this.version);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    this.db = request.result;
+                    resolve(this.db);
+                };
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('messages')) {
+                        const messagesStore = db.createObjectStore('messages', { keyPath: 'id' });
+                        messagesStore.createIndex('channelId', 'channelId', { unique: false });
+                        messagesStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    }
+                    if (!db.objectStoreNames.contains('conversations')) {
+                        db.createObjectStore('conversations', { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains('friends')) {
+                        db.createObjectStore('friends', { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        async saveMessage(channelId, message) {
+            const tx = this.db.transaction(['messages'], 'readwrite');
+            const store = tx.objectStore('messages');
+            const messageData = { ...message, channelId, timestamp: message.timestamp || Date.now() };
+            return new Promise((resolve, reject) => {
+                const request = store.put(messageData);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getMessages(channelId, limit = 50, offset = 0) {
+            const tx = this.db.transaction(['messages'], 'readonly');
+            const store = tx.objectStore('messages');
+            const index = store.index('channelId');
+            return new Promise((resolve, reject) => {
+                const messages = [];
+                const range = IDBKeyRange.only(channelId);
+                let skipped = 0;
+                const request = index.openCursor(range, 'prev');
+                request.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        if (skipped < offset) {
+                            skipped++;
+                            cursor.continue();
+                        } else if (messages.length < limit) {
+                            messages.push(cursor.value);
+                            cursor.continue();
+                        } else {
+                            resolve(messages.reverse());
+                        }
+                    } else {
+                        resolve(messages.reverse());
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async deleteMessage(messageId) {
+            const tx = this.db.transaction(['messages'], 'readwrite');
+            const store = tx.objectStore('messages');
+            return new Promise((resolve, reject) => {
+                const request = store.delete(messageId);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async updateMessage(messageId, newText) {
+            const tx = this.db.transaction(['messages'], 'readwrite');
+            const store = tx.objectStore('messages');
+            return new Promise((resolve, reject) => {
+                const getRequest = store.get(messageId);
+                getRequest.onsuccess = () => {
+                    const message = getRequest.result;
+                    if (message) {
+                        message.text = newText;
+                        message.edited = true;
+                        message.editedAt = Date.now();
+                        const updateRequest = store.put(message);
+                        updateRequest.onsuccess = () => resolve(message);
+                        updateRequest.onerror = () => reject(updateRequest.error);
+                    } else {
+                        reject(new Error('Message not found'));
+                    }
+                };
+                getRequest.onerror = () => reject(getRequest.error);
+            });
+        }
+
+        async saveConversation(conversation) {
+            const tx = this.db.transaction(['conversations'], 'readwrite');
+            const store = tx.objectStore('conversations');
+            return new Promise((resolve, reject) => {
+                const request = store.put(conversation);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getAllConversations() {
+            const tx = this.db.transaction(['conversations'], 'readonly');
+            const store = tx.objectStore('conversations');
+            return new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async saveFriend(friend) {
+            const tx = this.db.transaction(['friends'], 'readwrite');
+            const store = tx.objectStore('friends');
+            return new Promise((resolve, reject) => {
+                const request = store.put(friend);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async removeFriend(friendId) {
+            const tx = this.db.transaction(['friends'], 'readwrite');
+            const store = tx.objectStore('friends');
+            return new Promise((resolve, reject) => {
+                const request = store.delete(friendId);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getAllFriends() {
+            const tx = this.db.transaction(['friends'], 'readonly');
+            const store = tx.objectStore('friends');
+            return new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async clearChannelMessages(channelId) {
+            const tx = this.db.transaction(['messages'], 'readwrite');
+            const store = tx.objectStore('messages');
+            const index = store.index('channelId');
+            return new Promise((resolve, reject) => {
+                const range = IDBKeyRange.only(channelId);
+                const request = index.openCursor(range);
+                request.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        cursor.delete();
+                        cursor.continue();
+                    } else {
+                        resolve();
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+    }
+
+    // ============================================
+    // Unread Manager
+    // ============================================
+    class UnreadManager {
+        constructor() {
+            this.lastRead = new Map();
+            this.loadFromStorage();
+        }
+
+        loadFromStorage() {
+            const stored = localStorage.getItem('nlvx_lastread');
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    this.lastRead = new Map(Object.entries(data));
+                } catch (e) {
+                    console.error('Error loading unread data:', e);
+                }
+            }
+        }
+
+        saveToStorage() {
+            const data = Object.fromEntries(this.lastRead);
+            localStorage.setItem('nlvx_lastread', JSON.stringify(data));
+        }
+
+        markAsRead(channelId, messageTimestamp = Date.now()) {
+            this.lastRead.set(channelId, messageTimestamp);
+            this.saveToStorage();
+        }
+
+        async getUnreadCount(channelId, chatDB, currentUserId) {
+            const lastReadTime = this.lastRead.get(channelId) || 0;
+            const tx = chatDB.db.transaction(['messages'], 'readonly');
+            const store = tx.objectStore('messages');
+            const index = store.index('channelId');
+            return new Promise((resolve, reject) => {
+                let count = 0;
+                const range = IDBKeyRange.only(channelId);
+                const request = index.openCursor(range);
+                request.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        if (cursor.value.timestamp > lastReadTime && cursor.value.sender.id !== currentUserId) {
+                            count++;
+                        }
+                        cursor.continue();
+                    } else {
+                        resolve(count);
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+    }
+
+    // ============================================
+    // File Uploader
+    // ============================================
+    class FileUploader {
+        constructor(maxSize = 5 * 1024 * 1024) {
+            this.maxSize = maxSize;
+            this.allowedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+        }
+
+        async upload(file) {
+            if (file.size > this.maxSize) {
+                throw new Error('File too large. Max 5MB.');
+            }
+            if (!this.allowedTypes.includes(file.type)) {
+                throw new Error('File type not supported. Only images allowed.');
+            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    resolve({
+                        data: e.target.result,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size
+                    });
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    // ============================================
+    // Star Background Animation
+    // ============================================
     const canvas = document.getElementById('background-stars');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
@@ -314,7 +651,9 @@
         canvas.height = window.innerHeight; 
     });
 
-    // --- Main App Logic ---
+    // ============================================
+    // Main App Logic
+    // ============================================
     const savedUsername = localStorage.getItem('nlvx_username') || 'User' + Math.floor(Math.random() * 1000);
     let userId = localStorage.getItem('nlvx_userid');
     if (!userId) {
@@ -322,7 +661,6 @@
         localStorage.setItem('nlvx_userid', userId);
     }
     const myColor = localStorage.getItem('nlvx_usercolor') || '#e53e3e';
-
     const currentUser = { name: savedUsername, id: userId, color: myColor };
     
     const ably = new Ably.Realtime({ 
@@ -331,7 +669,7 @@
     });
 
     const elements = {
-        conversationsList: document.getElementById('conversationsList'),
+        conversationsList: document.getElementById('conversations-list'),
         onlineList: document.getElementById('online-list'),
         friendsList: document.getElementById('friends-list'),
         chatHeaderAvatar: document.getElementById('chat-header-avatar'),
@@ -353,18 +691,30 @@
         settingsModalBackdrop: document.getElementById('settings-modal-backdrop'),
         userProfileModalBackdrop: document.getElementById('user-profile-modal-backdrop'),
         editMessageModalBackdrop: document.getElementById('edit-message-modal-backdrop'),
-        chatActionsDropdown: document.getElementById('chat-actions-dropdown'),
         chatMenuBtn: document.getElementById('chat-menu-btn'),
         chatDropdownMenu: document.getElementById('chat-dropdown-menu'),
         leaveChatBtn: document.getElementById('leave-chat-btn'),
-        sidebarTabs: document.querySelector('.users-sidebar .sidebar-tabs'),
         toastContainer: document.getElementById('toast-container'),
+        fileInput: document.getElementById('file-input'),
+        attachBtn: document.getElementById('attach-btn'),
     };
 
-    // Fix: Get conversations list element
-    elements.conversationsList = document.getElementById('conversations-list');
+    let activeChannelId = 'public-room';
+    let channels = new Map();
+    let allUsers = new Map();
+    let conversations = new Map();
+    let friends = new Map();
+    let typingTimeout = null;
+    let replyTo = null;
+    let globalPresenceChannel;
+    let currentPage = 0;
+    const messagesPerPage = 30;
 
-    // Inject modal HTML
+    // Initialize managers
+    const chatDB = new ChatDB();
+    const unreadManager = new UnreadManager();
+    const fileUploader = new FileUploader();
+
     const roomIcons = {
         '🌍': 'Globe', '💬': 'Chat', '🎉': 'Party', '🎮': 'Gaming', '🎵': 'Music', 
         '🎨': 'Art', '💼': 'Work', '💡': 'Ideas', '🔥': 'Trending', '🚀': 'Projects'
@@ -397,7 +747,6 @@
     
     elements.editMessageModalBackdrop.innerHTML = `<div class="modal" id="edit-message-modal"><div class="modal-header"><h2 class="modal-title">Edit Message</h2></div><div class="modal-body"><div class="info-group"><input id="edit-message-input" type="text"></div></div><footer class="modal-footer"><button class="modal-button secondary" id="edit-message-cancel-btn">Cancel</button><button class="modal-button primary" id="edit-message-save-btn">Save</button></footer></div>`;
 
-    // Re-assign elements created dynamically
     Object.assign(elements, {
         createRoomNameInput: document.getElementById('create-room-name'),
         createRoomPassInput: document.getElementById('create-room-pass'),
@@ -417,15 +766,6 @@
         editMessageSaveBtn: document.getElementById('edit-message-save-btn'),
     });
 
-    let activeChannelId = 'public-room';
-    let channels = new Map();
-    let allUsers = new Map();
-    let conversations = new Map();
-    let friends = new Map();
-    let typingTimeout = null;
-    let replyTo = null;
-    let globalPresenceChannel;
-
     function showToast(message, type = 'error') {
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
@@ -437,18 +777,22 @@
         }, 4000);
     }
 
-    function saveState() {
-        const state = {
-            conversations: Array.from(conversations.entries()),
-            friends: Array.from(friends.entries())
-        };
-        localStorage.setItem('nlvx_state', JSON.stringify(state));
+    async function saveState() {
+        await chatDB.saveConversation(conversations.get('public-room'));
+        for (const [id, conv] of conversations) {
+            if (id !== 'public-room') {
+                await chatDB.saveConversation(conv);
+            }
+        }
     }
 
-    function loadState() {
-        const state = JSON.parse(localStorage.getItem('nlvx_state') || '{}');
-        conversations = new Map(state.conversations || []);
-        friends = new Map(state.friends || []);
+    async function loadState() {
+        const storedConvs = await chatDB.getAllConversations();
+        storedConvs.forEach(conv => conversations.set(conv.id, conv));
+        
+        const storedFriends = await chatDB.getAllFriends();
+        storedFriends.forEach(friend => friends.set(friend.id, friend));
+        
         if (!conversations.has('public-room')) {
             conversations.set('public-room', { 
                 id: 'public-room', 
@@ -482,8 +826,18 @@
         return avatar;
     }
 
-    function renderConversations() {
+    async function renderConversations() {
         elements.conversationsList.innerHTML = '';
+        
+        // Update unread counts
+        for (const [channelId, conv] of conversations) {
+            try {
+                conv.unread = await unreadManager.getUnreadCount(channelId, chatDB, currentUser.id);
+            } catch (e) {
+                console.error('Error getting unread count:', e);
+            }
+        }
+        
         const dms = Array.from(conversations.values()).filter(c => c.id.startsWith('private-')).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         const rooms = Array.from(conversations.values()).filter(c => !c.id.startsWith('private-')).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
@@ -508,10 +862,10 @@
         details.innerHTML = `<div class="list-item-name">${conv.name}</div><div class="list-item-snippet">${conv.lastMessage}</div>`;
         
         item.append(avatar, details);
-        if (conv.unread > 0) {
+        if (conv.unread > 0 && conv.id !== activeChannelId) {
             const badge = document.createElement('span');
             badge.className = 'unread-badge';
-            badge.textContent = conv.unread;
+            badge.textContent = conv.unread > 99 ? '99+' : conv.unread;
             item.appendChild(badge);
         }
         return item;
@@ -561,7 +915,9 @@
             }
         }
         activeChannelId = channelId;
+        currentPage = 0;
         elements.messagesList.innerHTML = '';
+        
         const conv = conversations.get(channelId);
         if (conv) {
             const headerAvatar = createAvatar(conv.user);
@@ -570,12 +926,130 @@
             elements.chatHeaderAvatar.textContent = headerAvatar.textContent;
             elements.chatHeaderTitle.textContent = conv.name;
             elements.messageInput.placeholder = `Message in ${conv.name}...`;
+            
+            unreadManager.markAsRead(channelId);
             conv.unread = 0;
         }
-        renderConversations();
-        loadMessages(channelId);
+        
+        await loadMessages(channelId);
         await setupChannel(channelId);
+        renderConversations();
+        
         setTimeout(() => { elements.messagesArea.style.opacity = 1; }, 50);
+    }
+
+    async function loadMessages(channelId) {
+        try {
+            const messages = await chatDB.getMessages(channelId, messagesPerPage, currentPage * messagesPerPage);
+            
+            if (messages.length > 0 && currentPage === 0) {
+                // Add load more button
+                const loadMoreBtn = document.createElement('button');
+                loadMoreBtn.className = 'load-more-btn';
+                loadMoreBtn.textContent = 'Load older messages';
+                loadMoreBtn.onclick = async () => {
+                    currentPage++;
+                    const olderMessages = await chatDB.getMessages(channelId, messagesPerPage, currentPage * messagesPerPage);
+                    if (olderMessages.length > 0) {
+                        const oldScrollHeight = elements.messagesArea.scrollHeight;
+                        olderMessages.forEach(msg => {
+                            const messageDiv = createMessageElement(msg);
+                            elements.messagesList.insertBefore(messageDiv, elements.messagesList.firstChild.nextSibling);
+                        });
+                        elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight - oldScrollHeight;
+                    } else {
+                        loadMoreBtn.textContent = 'No more messages';
+                        loadMoreBtn.disabled = true;
+                    }
+                };
+                elements.messagesList.appendChild(loadMoreBtn);
+            }
+            
+            messages.forEach(msg => {
+                const messageDiv = createMessageElement(msg);
+                elements.messagesList.appendChild(messageDiv);
+            });
+            
+            elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight;
+        } catch (e) {
+            console.error('Error loading messages:', e);
+        }
+    }
+
+    function createMessageElement(data) {
+        const isSent = data.sender.id === currentUser.id;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        messageDiv.id = data.id;
+
+        const avatar = createAvatar(data.sender);
+        avatar.onclick = () => showUserProfileModal(data.sender);
+        
+        const messageBody = document.createElement('div');
+        messageBody.className = 'message-body';
+
+        if (data.replyTo) {
+            const repliedToBlock = document.createElement('div');
+            repliedToBlock.className = 'message-replied-to';
+            repliedToBlock.onclick = () => scrollToMessage(data.replyTo.messageId);
+            repliedToBlock.innerHTML = `<div class="sender">Replying to: ${data.replyTo.senderName}</div><div class="text">${data.replyTo.text}</div>`;
+            messageBody.appendChild(repliedToBlock);
+        }
+
+        const usernameSpan = document.createElement('span');
+        usernameSpan.className = 'username';
+        usernameSpan.textContent = data.sender.name;
+        usernameSpan.style.color = data.sender.color;
+        usernameSpan.onclick = () => showUserProfileModal(data.sender);
+        messageBody.appendChild(usernameSpan);
+
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        const textSpan = document.createElement('span');
+        textSpan.className = 'message-text';
+        textSpan.innerHTML = linkify(data.text);
+        messageContent.appendChild(textSpan);
+
+        // Handle attachments
+        if (data.type === 'file' && data.attachment) {
+            const attachment = document.createElement('div');
+            attachment.className = 'message-attachment';
+            if (data.attachment.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = data.attachment.data;
+                img.onclick = () => window.open(data.attachment.data, '_blank');
+                attachment.appendChild(img);
+            }
+            messageContent.appendChild(attachment);
+        }
+
+        messageBody.appendChild(messageContent);
+
+        const actions = document.createElement('div');
+        actions.className = 'message-actions';
+        
+        const replyBtn = document.createElement('button');
+        replyBtn.title = 'Reply';
+        replyBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M15 8a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v3l4-3h4a2 2 0 002-2V8z"></path></svg>';
+        replyBtn.onclick = () => replyToMessage(data.id);
+        actions.appendChild(replyBtn);
+
+        if (isSent) {
+            const editBtn = document.createElement('button');
+            editBtn.title = 'Edit';
+            editBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>';
+            editBtn.onclick = () => editMessage(data.id, data.text);
+            actions.appendChild(editBtn);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.title = 'Delete';
+            deleteBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+            deleteBtn.onclick = () => deleteMessage(data.id);
+            actions.appendChild(deleteBtn);
+        }
+
+        messageDiv.append(avatar, messageBody, actions);
+        return messageDiv;
     }
 
     async function setupChannel(channelId) {
@@ -589,24 +1063,47 @@
         const channel = ably.channels.get(`chat:${channelId}`);
         channels.set(channelId, channel);
 
-        channel.subscribe('message', (msg) => {
+        channel.subscribe('message', async (msg) => {
             const conv = conversations.get(channelId);
             if (conv) {
                 conv.lastMessage = msg.data.text;
                 conv.timestamp = Date.now();
-                saveState();
+                
+                if (channelId !== activeChannelId && msg.data.sender.id !== currentUser.id) {
+                    conv.unread = (conv.unread || 0) + 1;
+                    
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification(`${msg.data.sender.name} in ${conv.name}`, {
+                            body: msg.data.text.substring(0, 100),
+                            tag: channelId
+                        });
+                    }
+                }
+                
+                await saveState();
             }
-            saveMessage(channelId, msg.data);
-            addMessageUI(msg.data);
+            
+            await chatDB.saveMessage(channelId, msg.data);
+            
+            if (channelId === activeChannelId) {
+                const messageDiv = createMessageElement(msg.data);
+                elements.messagesList.appendChild(messageDiv);
+                elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight;
+                unreadManager.markAsRead(channelId, msg.data.timestamp);
+            }
+            
+            renderConversations();
         });
         
-        channel.subscribe('delete_message', (msg) => {
+        channel.subscribe('delete_message', async (msg) => {
             document.getElementById(msg.data.messageId)?.remove();
+            await chatDB.deleteMessage(msg.data.messageId);
         });
         
-        channel.subscribe('edit_message', (msg) => {
+        channel.subscribe('edit_message', async (msg) => {
             const messageText = document.querySelector(`#${msg.data.messageId} .message-text`);
             if (messageText) messageText.innerHTML = linkify(msg.data.newText);
+            await chatDB.updateMessage(msg.data.messageId, msg.data.newText);
         });
 
         const presence = channel.presence;
@@ -632,68 +1129,7 @@
     }
 
     function addMessageUI(data) {
-        const isSent = data.sender.id === currentUser.id;
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-        messageDiv.id = data.id;
-
-        const avatar = createAvatar(data.sender);
-        avatar.onclick = () => showUserProfileModal(data.sender);
-        
-        const messageBody = document.createElement('div');
-        messageBody.className = 'message-body';
-
-        // Reply to block
-        if (data.replyTo) {
-            const repliedToBlock = document.createElement('div');
-            repliedToBlock.className = 'message-replied-to';
-            repliedToBlock.onclick = () => scrollToMessage(data.replyTo.messageId);
-            repliedToBlock.innerHTML = `<div class="sender">Replying to: ${data.replyTo.senderName}</div><div class="text">${data.replyTo.text}</div>`;
-            messageBody.appendChild(repliedToBlock);
-        }
-
-        const usernameSpan = document.createElement('span');
-        usernameSpan.className = 'username';
-        usernameSpan.textContent = data.sender.name;
-        usernameSpan.style.color = data.sender.color;
-        usernameSpan.onclick = () => showUserProfileModal(data.sender);
-        messageBody.appendChild(usernameSpan);
-
-        const messageContent = document.createElement('div');
-        messageContent.className = 'message-content';
-        const textSpan = document.createElement('span');
-        textSpan.className = 'message-text';
-        textSpan.innerHTML = linkify(data.text);
-        messageContent.appendChild(textSpan);
-        messageBody.appendChild(messageContent);
-
-        const actions = document.createElement('div');
-        actions.className = 'message-actions';
-        
-        // Reply button
-        const replyBtn = document.createElement('button');
-        replyBtn.title = 'Reply';
-        replyBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M15 8a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v3l4-3h4a2 2 0 002-2V8z"></path></svg>';
-        replyBtn.onclick = () => replyToMessage(data.id);
-        actions.appendChild(replyBtn);
-
-        if (isSent) {
-            // Edit button
-            const editBtn = document.createElement('button');
-            editBtn.title = 'Edit';
-            editBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>';
-            editBtn.onclick = () => editMessage(data.id, data.text);
-            actions.appendChild(editBtn);
-            
-            // Delete button
-            const deleteBtn = document.createElement('button');
-            deleteBtn.title = 'Delete';
-            deleteBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
-            deleteBtn.onclick = () => deleteMessage(data.id);
-            actions.appendChild(deleteBtn);
-        }
-
-        messageDiv.append(avatar, messageBody, actions);
+        const messageDiv = createMessageElement(data);
         elements.messagesList.appendChild(messageDiv);
         elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight;
     }
@@ -759,18 +1195,6 @@
         elements.editMessageCancelBtn.onclick = () => hideModal(elements.editMessageModalBackdrop);
     }
 
-    function saveMessage(channelId, messageData) {
-        const history = JSON.parse(localStorage.getItem(`msg_${channelId}`) || '[]');
-        history.push(messageData);
-        if (history.length > 50) history.shift();
-        localStorage.setItem(`msg_${channelId}`, JSON.stringify(history));
-    }
-
-    function loadMessages(channelId) {
-        const history = JSON.parse(localStorage.getItem(`msg_${channelId}`) || '[]');
-        history.forEach(msg => addMessageUI(msg));
-    }
-
     function showModal(modalBackdrop) { modalBackdrop.classList.add('visible'); }
     function hideModal(modalBackdrop) { modalBackdrop.classList.remove('visible'); }
 
@@ -798,15 +1222,16 @@
         showModal(elements.userProfileModalBackdrop);
     }
 
-    function toggleFriend(user) {
+    async function toggleFriend(user) {
         if (friends.has(user.id)) {
             friends.delete(user.id);
+            await chatDB.removeFriend(user.id);
             showToast(`${user.name} removed from friends.`, 'success');
         } else {
             friends.set(user.id, user);
+            await chatDB.saveFriend(user);
             showToast(`${user.name} added to friends!`, 'success');
         }
-        saveState();
         renderUserLists();
     }
 
@@ -852,7 +1277,9 @@
         });
     }
 
+    // ============================================
     // Event Listeners
+    // ============================================
     elements.addRoomBtn.onclick = () => showModal(elements.roomModalBackdrop);
     
     elements.settingsBtn.onclick = () => {
@@ -930,11 +1357,16 @@
         showToast('Settings saved!', 'success');
     };
 
-    elements.sendButton.onclick = () => {
+    elements.sendButton.onclick = async () => {
         const text = elements.messageInput.value.trim();
         if (text && channels.has(activeChannelId)) {
             const messageId = `${currentUser.id}-${Date.now()}`;
-            const messageData = { id: messageId, text, sender: currentUser };
+            const messageData = { 
+                id: messageId, 
+                text, 
+                sender: currentUser,
+                timestamp: Date.now()
+            };
             
             if (replyTo) {
                 messageData.replyTo = replyTo;
@@ -988,11 +1420,40 @@
             }
             channels.delete(activeChannelId);
             conversations.delete(activeChannelId);
-            localStorage.removeItem(`msg_${activeChannelId}`);
-            saveState();
+            await chatDB.clearChannelMessages(activeChannelId);
+            await saveState();
             switchChannel('public-room');
         }
     };
+
+    // File upload handler
+    elements.attachBtn.onclick = () => {
+        elements.fileInput.click();
+    };
+
+    elements.fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const fileData = await fileUploader.upload(file);
+            
+            const messageData = {
+                id: `${currentUser.id}-${Date.now()}`,
+                text: `📎 ${fileData.name}`,
+                sender: currentUser,
+                attachment: fileData,
+                type: 'file',
+                timestamp: Date.now()
+            };
+
+            channels.get(activeChannelId).publish('message', messageData);
+            e.target.value = '';
+            showToast('Image uploaded successfully!', 'success');
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    });
 
     function setupTabSlider(tabContainer) {
         const tabs = tabContainer.querySelectorAll('.tab-btn');
@@ -1027,7 +1488,6 @@
                     if (currentContent) currentContent.classList.remove('active');
                     if (newContent) newContent.classList.add('active');
                 } else {
-                    // Handle sidebar tabs (Online/Friends)
                     const allLists = document.querySelectorAll('.users-sidebar .sidebar-list');
                     allLists.forEach(list => list.style.display = 'none');
                     const targetList = document.getElementById(tab.dataset.tab);
@@ -1069,9 +1529,9 @@
         });
     }
 
-    // Initialize tabs
-    if (elements.sidebarTabs) {
-        setupTabSlider(elements.sidebarTabs);
+    const sidebarTabs = document.querySelector('.users-sidebar .sidebar-tabs');
+    if (sidebarTabs) {
+        setupTabSlider(sidebarTabs);
     }
     const roomModalTabs = document.querySelector('#room-modal .sidebar-tabs');
     if (roomModalTabs) {
@@ -1079,14 +1539,22 @@
     }
     setupCustomSelect();
 
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+
+    // ============================================
     // INITIALIZATION
+    // ============================================
     ably.connection.on('connected', async () => {
-        console.log('Connected to Ably');
-        loadState();
-        updateSidebarProfile();
-        renderConversations();
+        console.log('✅ Connected to Ably');
         
-        // Setup global channel for presence and room checks
+        await chatDB.init();
+        await loadState();
+        updateSidebarProfile();
+        await renderConversations();
+        
         globalPresenceChannel = ably.channels.get('global-presence');
         
         globalPresenceChannel.presence.subscribe(['enter', 'leave', 'update'], async () => {
@@ -1151,12 +1619,12 @@
     });
 
     ably.connection.on('failed', (err) => {
-        console.error('Ably connection failed:', err);
+        console.error('❌ Ably connection failed:', err);
         showToast('Connection failed. Please refresh the page.');
     });
     
     ably.connection.on('disconnected', () => {
-        console.log('Disconnected from Ably');
+        console.log('⚠️ Disconnected from Ably');
         showToast('Disconnected. Attempting to reconnect...');
     });
 

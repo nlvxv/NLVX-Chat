@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/public/chat.html"
+    }
+  ],
+  "functions": {
+    "api/auth.js": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  }
+}
