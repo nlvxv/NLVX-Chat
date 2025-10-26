@@ -19,7 +19,7 @@
             --surface-secondary: #1a0d2e;
             --text-primary: #f0e8ff;
             --text-secondary: #bca9d4;
-            --card-background: rgba(22, 13, 46, 0.5 );
+            --card-background: rgba(22, 13, 46, 0.5);
             --card-border: rgba(255, 255, 255, 0.1);
             --glow-color: rgba(229, 62, 62, 0.4);
             --online-color: #28a745;
@@ -103,6 +103,19 @@
         .message.sent .message-actions { right: auto; left: -5px; }
         .message-actions button { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; }
         .message-actions button:hover { color: var(--text-primary); }
+
+        /* --- Reply Feature Styling --- */
+        .reply-preview { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background-color: var(--surface-secondary); border-radius: 10px 10px 0 0; border-bottom: 1px solid var(--card-border); }
+        .reply-content { flex-grow: 1; border-left: 3px solid var(--primary-color); padding-left: 10px; overflow: hidden; }
+        .reply-content .sender { font-weight: 600; font-size: 0.9em; color: var(--primary-color); }
+        .reply-content .text { font-size: 0.8em; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .reply-cancel { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; margin-left: 10px; }
+        .reply-cancel:hover { color: var(--text-primary); }
+
+        .message-replied-to { background-color: var(--card-background); padding: 8px; border-radius: 8px; border-left: 3px solid var(--primary-color); margin-bottom: 8px; cursor: pointer; transition: background-color 0.2s; }
+        .message-replied-to:hover { background-color: var(--surface-secondary); }
+        .message-replied-to .sender { font-weight: 600; font-size: 0.85em; color: var(--primary-color); }
+        .message-replied-to .text { font-size: 0.8em; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: 2.4em; }
         
         /* --- Input Area --- */
         .input-area { padding: 16px 24px; border-top: 1px solid var(--card-border); }
@@ -226,9 +239,20 @@
                 <main class="messages-area" id="messages-area"><div class="messages-list" id="messages-list"></div></main>
                 <footer class="input-area">
                     <div class="typing-indicator" id="typing-indicator"></div>
+                    <div id="reply-preview" class="reply-preview" style="display: none;">
+                        <div class="reply-content">
+                            <div class="sender">Replying to: <span id="reply-to-sender"></span></div>
+                            <div class="text" id="reply-to-text"></div>
+                        </div>
+                        <button id="reply-cancel" class="reply-cancel" title="Cancel Reply">
+                            <svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </div>
                     <div class="input-controls">
-                        <input type="text" id="message-input" placeholder="Message...">
-                        <button id="send-button" title="Send"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg></button>
+                        <input type="text" id="message-input" placeholder="Message in Public Room..." autocomplete="off">
+                        <button id="send-button">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                        </button>
                     </div>
                 </footer>
             </div>
@@ -257,27 +281,42 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     let stars = [];
-    for (let i = 0; i < 150; i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, radius: Math.random() * 1.5, alpha: Math.random(), vx: (Math.random() - 0.5) * 0.1, vy: (Math.random() - 0.5) * 0.1 }); }
+    for (let i = 0; i < 150; i++) { 
+        stars.push({ 
+            x: Math.random() * canvas.width, 
+            y: Math.random() * canvas.height, 
+            radius: Math.random() * 1.5, 
+            alpha: Math.random(), 
+            vx: (Math.random() - 0.5) * 0.1, 
+            vy: (Math.random() - 0.5) * 0.1 
+        }); 
+    }
     function animateStars() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         stars.forEach(star => {
-            star.x += star.vx; star.y += star.vy;
+            star.x += star.vx; 
+            star.y += star.vy;
             if (star.x < 0 || star.x > canvas.width) star.vx = -star.vx;
             if (star.y < 0 || star.y > canvas.height) star.vy = -star.vy;
             star.alpha += 0.01 * (Math.random() > 0.5 ? 1 : -1);
-            if (star.alpha < 0) star.alpha = 0; if (star.alpha > 1) star.alpha = 1;
-            ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(240, 232, 255, ${star.alpha})`; ctx.fill();
+            if (star.alpha < 0) star.alpha = 0; 
+            if (star.alpha > 1) star.alpha = 1;
+            ctx.beginPath(); 
+            ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(240, 232, 255, ${star.alpha})`; 
+            ctx.fill();
         });
         requestAnimationFrame(animateStars);
     }
     animateStars();
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    window.addEventListener('resize', () => { 
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight; 
+    });
 
     // --- Main App Logic ---
-    const savedUsername = localStorage.getItem('nlvx_username');
+    const savedUsername = localStorage.getItem('nlvx_username') || 'User' + Math.floor(Math.random() * 1000);
     let userId = localStorage.getItem('nlvx_userid');
-    if (!savedUsername) { window.location.href = 'index.html'; }
     if (!userId) {
         userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         localStorage.setItem('nlvx_userid', userId);
@@ -286,18 +325,26 @@
 
     const currentUser = { name: savedUsername, id: userId, color: myColor };
     
-    const ably = new Ably.Realtime({ key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4', clientId: currentUser.id });
+    const ably = new Ably.Realtime({ 
+        key: 'AOSWlQ.RNZ3Sw:ilbVxgdgZXFnBUFUU6vP4iC6qp5f3-qIVhMEGR1gzN4', 
+        clientId: currentUser.id 
+    });
 
     const elements = {
-        conversationsList: document.getElementById('conversations-list'),
+        conversationsList: document.getElementById('conversationsList'),
         onlineList: document.getElementById('online-list'),
         friendsList: document.getElementById('friends-list'),
         chatHeaderAvatar: document.getElementById('chat-header-avatar'),
         chatHeaderTitle: document.getElementById('chat-header-title'),
         messagesArea: document.getElementById('messages-area'),
         messagesList: document.getElementById('messages-list'),
+        typingIndicator: document.getElementById('typing-indicator'),
         messageInput: document.getElementById('message-input'),
         sendButton: document.getElementById('send-button'),
+        replyPreview: document.getElementById('reply-preview'),
+        replyToSender: document.getElementById('reply-to-sender'),
+        replyToText: document.getElementById('reply-to-text'),
+        replyCancel: document.getElementById('reply-cancel'),
         sidebarAvatar: document.getElementById('sidebar-avatar'),
         sidebarUsername: document.getElementById('sidebar-username'),
         addRoomBtn: document.getElementById('add-room-btn'),
@@ -306,7 +353,6 @@
         settingsModalBackdrop: document.getElementById('settings-modal-backdrop'),
         userProfileModalBackdrop: document.getElementById('user-profile-modal-backdrop'),
         editMessageModalBackdrop: document.getElementById('edit-message-modal-backdrop'),
-        typingIndicator: document.getElementById('typing-indicator'),
         chatActionsDropdown: document.getElementById('chat-actions-dropdown'),
         chatMenuBtn: document.getElementById('chat-menu-btn'),
         chatDropdownMenu: document.getElementById('chat-dropdown-menu'),
@@ -315,11 +361,15 @@
         toastContainer: document.getElementById('toast-container'),
     };
 
+    // Fix: Get conversations list element
+    elements.conversationsList = document.getElementById('conversations-list');
+
     // Inject modal HTML
     const roomIcons = {
         '🌍': 'Globe', '💬': 'Chat', '🎉': 'Party', '🎮': 'Gaming', '🎵': 'Music', 
         '🎨': 'Art', '💼': 'Work', '💡': 'Ideas', '🔥': 'Trending', '🚀': 'Projects'
     };
+    
     elements.roomModalBackdrop.innerHTML = `<div class="modal" id="room-modal">
         <div class="modal-header sidebar-tabs" style="margin-bottom: 0; padding: 0 24px;">
             <button class="tab-btn active" data-tab="create-room-tab">Create Room</button>
@@ -330,7 +380,7 @@
             <div id="create-room-tab" class="tab-content active">
                 <div class="info-group"><label for="create-room-name">Room Name</label><input type="text" id="create-room-name" placeholder="My Awesome Room"></div>
                 <div class="info-group"><label for="create-room-pass">Create Password</label><input type="password" id="create-room-pass" placeholder="Keep it secret, keep it safe!"></div>
-                <div class="info-group"><label for="create-room-icon">Room Icon</label><div class="custom-select-wrapper"><div class="custom-select-trigger"><span>🌍</span> Globe</div><div class="custom-options"></div></div></div>
+                <div class="info-group"><label for="create-room-icon">Room Icon</label><div class="custom-select-wrapper"><div class="custom-select-trigger" data-value="🌍"><span>🌍</span> Globe</div><div class="custom-options"></div></div></div>
                 <button class="modal-button primary" id="create-room-btn" style="width:100%;">Create New Room</button>
             </div>
             <div id="join-room-tab" class="tab-content">
@@ -340,8 +390,11 @@
             </div>
         </div>
     </div>`;
+    
     elements.settingsModalBackdrop.innerHTML = `<div class="modal" id="settings-modal"><div class="modal-header"><h2 class="modal-title">Settings</h2><p class="modal-subtitle">Customize your profile.</p></div><div class="modal-body"><div class="info-group"><label for="my-username-input">Username</label><input id="my-username-input" type="text"></div><div class="info-group"><label>Avatar Color</label><div class="color-picker" id="color-picker"></div></div></div><footer class="modal-footer"><button class="modal-button secondary" id="settings-close-btn">Close</button><button class="modal-button primary" id="settings-save-btn">Save</button></footer></div>`;
+    
     elements.userProfileModalBackdrop.innerHTML = `<div class="modal" id="user-profile-modal"><div class="modal-header" style="padding-bottom: 0;"><div class="avatar" id="profile-modal-avatar" style="width: 80px; height: 80px; font-size: 2.5em; margin: -64px auto 16px; border-width: 4px;"></div><h2 class="modal-title" id="profile-modal-username"></h2></div><div class="modal-body" id="profile-modal-body" style="padding-top: 16px;"></div></div>`;
+    
     elements.editMessageModalBackdrop.innerHTML = `<div class="modal" id="edit-message-modal"><div class="modal-header"><h2 class="modal-title">Edit Message</h2></div><div class="modal-body"><div class="info-group"><input id="edit-message-input" type="text"></div></div><footer class="modal-footer"><button class="modal-button secondary" id="edit-message-cancel-btn">Cancel</button><button class="modal-button primary" id="edit-message-save-btn">Save</button></footer></div>`;
 
     // Re-assign elements created dynamically
@@ -369,13 +422,14 @@
     let allUsers = new Map();
     let conversations = new Map();
     let friends = new Map();
-    let typingTimeout;
+    let typingTimeout = null;
+    let replyTo = null;
     let globalPresenceChannel;
 
     function showToast(message, type = 'error') {
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        toast.innerHTML = `<span class="toast-icon">${type === 'error' ? '!' : '✓'}</span><span class="toast-message">${message}</span>`;
+        toast.innerHTML = `<span class="toast-icon">${type === 'error' ? '⚠' : '✓'}</span><span class="toast-message">${message}</span>`;
         elements.toastContainer.appendChild(toast);
         setTimeout(() => {
             toast.style.animation = 'toast-out 0.5s forwards';
@@ -396,7 +450,14 @@
         conversations = new Map(state.conversations || []);
         friends = new Map(state.friends || []);
         if (!conversations.has('public-room')) {
-            conversations.set('public-room', { id: 'public-room', name: 'Public Room', lastMessage: 'Welcome to the global chat!', unread: 0, user: { name: 'Public', icon: '🌍', isRoom: true }, timestamp: 0 });
+            conversations.set('public-room', { 
+                id: 'public-room', 
+                name: 'Public Room', 
+                lastMessage: 'Welcome to the global chat!', 
+                unread: 0, 
+                user: { name: 'Public', icon: '🌍', isRoom: true }, 
+                timestamp: 0 
+            });
         }
     }
 
@@ -492,8 +553,12 @@
     async function switchChannel(channelId) {
         elements.messagesArea.style.opacity = 0;
         if (activeChannelId && channels.has(activeChannelId)) {
-            await channels.get(activeChannelId).presence.leave();
-            await channels.get(activeChannelId).detach();
+            try {
+                await channels.get(activeChannelId).presence.leave();
+                await channels.get(activeChannelId).detach();
+            } catch (e) {
+                console.error('Error leaving channel:', e);
+            }
         }
         activeChannelId = channelId;
         elements.messagesList.innerHTML = '';
@@ -515,7 +580,11 @@
 
     async function setupChannel(channelId) {
         if (channels.has(channelId)) {
-            await channels.get(channelId).detach();
+            try {
+                await channels.get(channelId).detach();
+            } catch (e) {
+                console.error('Error detaching channel:', e);
+            }
         }
         const channel = ably.channels.get(`chat:${channelId}`);
         channels.set(channelId, channel);
@@ -530,9 +599,11 @@
             saveMessage(channelId, msg.data);
             addMessageUI(msg.data);
         });
+        
         channel.subscribe('delete_message', (msg) => {
             document.getElementById(msg.data.messageId)?.remove();
         });
+        
         channel.subscribe('edit_message', (msg) => {
             const messageText = document.querySelector(`#${msg.data.messageId} .message-text`);
             if (messageText) messageText.innerHTML = linkify(msg.data.newText);
@@ -540,17 +611,23 @@
 
         const presence = channel.presence;
         presence.subscribe('update', (member) => {
-            if (member.clientId !== currentUser.id && member.data.isTyping) {
-                elements.typingIndicator.textContent = `${member.data.name} is typing...`;
+            if (member.clientId !== currentUser.id && member.data && member.data.isTyping) {
+                const userName = member.data.name || 'A user';
+                elements.typingIndicator.textContent = `${userName} is typing...`;
             } else {
                 elements.typingIndicator.textContent = '';
             }
         });
-        await presence.enter(currentUser);
+        
+        try {
+            await presence.enter(currentUser);
+        } catch (e) {
+            console.error('Error entering presence:', e);
+        }
     }
 
     function linkify(text) {
-        const urlRegex = /(\b(https?|ftp|file ):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+        const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
         return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
     }
 
@@ -565,6 +642,15 @@
         
         const messageBody = document.createElement('div');
         messageBody.className = 'message-body';
+
+        // Reply to block
+        if (data.replyTo) {
+            const repliedToBlock = document.createElement('div');
+            repliedToBlock.className = 'message-replied-to';
+            repliedToBlock.onclick = () => scrollToMessage(data.replyTo.messageId);
+            repliedToBlock.innerHTML = `<div class="sender">Replying to: ${data.replyTo.senderName}</div><div class="text">${data.replyTo.text}</div>`;
+            messageBody.appendChild(repliedToBlock);
+        }
 
         const usernameSpan = document.createElement('span');
         usernameSpan.className = 'username';
@@ -581,18 +667,75 @@
         messageContent.appendChild(textSpan);
         messageBody.appendChild(messageContent);
 
+        const actions = document.createElement('div');
+        actions.className = 'message-actions';
+        
+        // Reply button
+        const replyBtn = document.createElement('button');
+        replyBtn.title = 'Reply';
+        replyBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M15 8a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v3l4-3h4a2 2 0 002-2V8z"></path></svg>';
+        replyBtn.onclick = () => replyToMessage(data.id);
+        actions.appendChild(replyBtn);
+
         if (isSent) {
-            const actions = document.createElement('div');
-            actions.className = 'message-actions';
-            actions.innerHTML = `<button title="Edit"><svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg></button><button title="Delete"><svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>`;
-            actions.children[0].onclick = () => editMessage(data.id, data.text);
-            actions.children[1].onclick = () => deleteMessage(data.id);
-            messageDiv.appendChild(actions);
+            // Edit button
+            const editBtn = document.createElement('button');
+            editBtn.title = 'Edit';
+            editBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>';
+            editBtn.onclick = () => editMessage(data.id, data.text);
+            actions.appendChild(editBtn);
+            
+            // Delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.title = 'Delete';
+            deleteBtn.innerHTML = '<svg fill="currentColor" viewBox="0 0 20 20" width="16" height="16"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+            deleteBtn.onclick = () => deleteMessage(data.id);
+            actions.appendChild(deleteBtn);
         }
 
-        messageDiv.append(avatar, messageBody);
+        messageDiv.append(avatar, messageBody, actions);
         elements.messagesList.appendChild(messageDiv);
         elements.messagesArea.scrollTop = elements.messagesArea.scrollHeight;
+    }
+
+    function replyToMessage(messageId) {
+        const messageDiv = document.getElementById(messageId);
+        if (!messageDiv) return;
+
+        const senderName = messageDiv.querySelector('.username').textContent;
+        const messageText = messageDiv.querySelector('.message-text').textContent;
+
+        replyTo = {
+            messageId: messageId,
+            senderName: senderName,
+            text: messageText
+        };
+        
+        elements.replyToSender.textContent = senderName;
+        elements.replyToText.textContent = messageText;
+        elements.replyPreview.style.display = 'flex';
+        elements.messageInput.focus();
+    }
+
+    function clearReply() {
+        replyTo = null;
+        elements.replyPreview.style.display = 'none';
+        elements.replyToSender.textContent = '';
+        elements.replyToText.textContent = '';
+    }
+
+    elements.replyCancel.onclick = clearReply;
+
+    function scrollToMessage(messageId) {
+        const targetMessage = document.getElementById(messageId);
+        if (targetMessage) {
+            targetMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetMessage.style.transition = 'box-shadow 0.5s';
+            targetMessage.style.boxShadow = '0 0 20px 5px var(--glow-color)';
+            setTimeout(() => {
+                targetMessage.style.boxShadow = 'none';
+            }, 1500);
+        }
     }
 
     async function deleteMessage(messageId) {
@@ -670,7 +813,14 @@
     function startPrivateChat(user) {
         const privateChannelId = `private-${[currentUser.id, user.id].sort().join('-')}`;
         if (!conversations.has(privateChannelId)) {
-            conversations.set(privateChannelId, { id: privateChannelId, name: user.name, lastMessage: 'Chat started.', unread: 0, user: user, timestamp: Date.now() });
+            conversations.set(privateChannelId, { 
+                id: privateChannelId, 
+                name: user.name, 
+                lastMessage: 'Chat started.', 
+                unread: 0, 
+                user: user, 
+                timestamp: Date.now() 
+            });
             saveState();
         }
         switchChannel(privateChannelId);
@@ -702,14 +852,13 @@
         });
     }
 
-    // --- Event Listeners ---
+    // Event Listeners
     elements.addRoomBtn.onclick = () => showModal(elements.roomModalBackdrop);
+    
     elements.settingsBtn.onclick = () => {
         elements.myUsernameInput.value = currentUser.name;
         const colors = ['#e53e3e', '#b91c1c', '#dd6b20', '#a259ff', '#00c4ff', '#28a745'];
-        elements.colorPicker.innerHTML = colors.map(c => `<div class="color-swatch" style="background-color:${c}" data-color="${c}"></div>`).join('');
-        const currentSwatch = document.querySelector(`.color-swatch[data-color="${currentUser.color}"]`);
-        if(currentSwatch) currentSwatch.classList.add('selected');
+        elements.colorPicker.innerHTML = colors.map(c => `<div class="color-swatch ${c === currentUser.color ? 'selected' : ''}" style="background-color:${c}" data-color="${c}"></div>`).join('');
         document.querySelectorAll('.color-swatch').forEach(s => s.onclick = () => {
             document.querySelector('.color-swatch.selected')?.classList.remove('selected');
             s.classList.add('selected');
@@ -720,6 +869,7 @@
     [elements.roomModalBackdrop, elements.settingsModalBackdrop, elements.userProfileModalBackdrop, elements.editMessageModalBackdrop].forEach(modal => {
         modal.onclick = (e) => { if(e.target === modal) hideModal(modal); };
     });
+    
     elements.settingsCloseBtn.onclick = () => hideModal(elements.settingsModalBackdrop);
 
     elements.createRoomBtn.onclick = () => {
@@ -728,10 +878,21 @@
         if (!roomName || !roomPass) return showToast('Please enter a room name and password.');
         const newRoomId = `room_${roomName.replace(/\s+/g, '_')}_${Math.random().toString(36).substr(2, 5)}`;
         const roomIcon = document.querySelector('.custom-select-trigger').dataset.value;
-        const newRoomData = { id: newRoomId, name: roomName, lastMessage: `You created the room.`, unread: 0, user: { name: roomName, icon: roomIcon, isRoom: true }, isProtected: true, password: roomPass, timestamp: Date.now() };
+        const newRoomData = { 
+            id: newRoomId, 
+            name: roomName, 
+            lastMessage: 'You created the room.', 
+            unread: 0, 
+            user: { name: roomName, icon: roomIcon, isRoom: true }, 
+            isProtected: true, 
+            password: roomPass, 
+            timestamp: Date.now() 
+        };
         conversations.set(newRoomId, newRoomData);
         saveState();
-        globalPresenceChannel.publish('room_created', newRoomData);
+        if (globalPresenceChannel) {
+            globalPresenceChannel.publish('room_created', newRoomData);
+        }
         switchChannel(newRoomId);
         hideModal(elements.roomModalBackdrop);
         showToast(`Room "${roomName}" created!`, 'success');
@@ -741,18 +902,30 @@
         const roomName = elements.joinRoomNameInput.value.trim();
         const roomPass = elements.joinRoomPassInput.value.trim();
         if (!roomName || !roomPass) return showToast('Please enter the room name and password.');
-        globalPresenceChannel.publish('request_room_join', { roomName, roomPass, requesterId: currentUser.id });
+        if (globalPresenceChannel) {
+            globalPresenceChannel.publish('request_room_join', { roomName, roomPass, requesterId: currentUser.id });
+        }
     };
 
     elements.settingsSaveBtn.onclick = async () => {
         const newName = elements.myUsernameInput.value.trim();
         if (!newName) return showToast('Username cannot be empty.');
+        const selectedSwatch = document.querySelector('.color-swatch.selected');
+        if (!selectedSwatch) return showToast('Please select a color.');
+        
         currentUser.name = newName;
-        currentUser.color = document.querySelector('.color-swatch.selected').dataset.color;
+        currentUser.color = selectedSwatch.dataset.color;
         localStorage.setItem('nlvx_username', currentUser.name);
         localStorage.setItem('nlvx_usercolor', currentUser.color);
         updateSidebarProfile();
-        await globalPresenceChannel.presence.update(currentUser);
+        
+        if (globalPresenceChannel) {
+            try {
+                await globalPresenceChannel.presence.update(currentUser);
+            } catch (e) {
+                console.error('Error updating presence:', e);
+            }
+        }
         hideModal(elements.settingsModalBackdrop);
         showToast('Settings saved!', 'success');
     };
@@ -761,31 +934,58 @@
         const text = elements.messageInput.value.trim();
         if (text && channels.has(activeChannelId)) {
             const messageId = `${currentUser.id}-${Date.now()}`;
-            channels.get(activeChannelId).publish('message', { id: messageId, text, sender: currentUser });
+            const messageData = { id: messageId, text, sender: currentUser };
+            
+            if (replyTo) {
+                messageData.replyTo = replyTo;
+                clearReply();
+            }
+
+            channels.get(activeChannelId).publish('message', messageData);
             elements.messageInput.value = '';
             elements.messageInput.focus();
         }
     };
-    elements.messageInput.onkeypress = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); elements.sendButton.onclick(); } };
+    
+    elements.messageInput.onkeypress = (e) => { 
+        if (e.key === 'Enter' && !e.shiftKey) { 
+            e.preventDefault(); 
+            elements.sendButton.onclick(); 
+        } 
+    };
     
     elements.messageInput.addEventListener('input', () => {
-        channels.get(activeChannelId)?.presence.update({ isTyping: true });
-        clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            channels.get(activeChannelId)?.presence.update({ isTyping: false });
-        }, 2000);
+        const channel = channels.get(activeChannelId);
+        if (channel) {
+            channel.presence.update({ ...currentUser, isTyping: true });
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                channel.presence.update({ ...currentUser, isTyping: false });
+            }, 2000);
+        }
     });
 
     elements.chatMenuBtn.onclick = (e) => {
         e.stopPropagation();
         elements.chatDropdownMenu.classList.toggle('show');
     };
+    
     document.addEventListener('click', () => elements.chatDropdownMenu.classList.remove('show'));
 
     elements.leaveChatBtn.onclick = async () => {
-        const confirmed = await showConfirmation(`Are you sure you want to leave "${conversations.get(activeChannelId).name}"? This will remove it from your list.`);
+        const conv = conversations.get(activeChannelId);
+        if (!conv) return;
+        
+        const confirmed = await showConfirmation(`Are you sure you want to leave "${conv.name}"? This will remove it from your list.`);
         if (confirmed) {
-            channels.get(activeChannelId)?.detach();
+            const channel = channels.get(activeChannelId);
+            if (channel) {
+                try {
+                    await channel.detach();
+                } catch (e) {
+                    console.error('Error detaching channel:', e);
+                }
+            }
             channels.delete(activeChannelId);
             conversations.delete(activeChannelId);
             localStorage.removeItem(`msg_${activeChannelId}`);
@@ -807,22 +1007,32 @@
         tabs.forEach((tab, index) => {
             tab.addEventListener('click', () => {
                 const currentActive = tabContainer.querySelector('.active');
+                if (currentActive === tab) return;
+                
                 currentActive.classList.remove('active');
                 tab.classList.add('active');
                 moveIndicator(tab);
 
-                const currentContent = contentContainer.querySelector('.tab-content.active');
-                const newContent = contentContainer.querySelector(`#${tab.dataset.tab}`);
-                const newIndex = Array.from(tabs).indexOf(tab);
-                const oldIndex = Array.from(tabs).indexOf(currentActive);
+                if (contentContainer && contentContainer.classList.contains('tab-content-container')) {
+                    const currentContent = contentContainer.querySelector('.tab-content.active');
+                    const newContent = contentContainer.querySelector(`#${tab.dataset.tab}`);
+                    const newIndex = Array.from(tabs).indexOf(tab);
+                    const oldIndex = Array.from(tabs).indexOf(currentActive);
 
-                contentContainer.querySelectorAll('.tab-content').forEach(c => c.classList.remove('reverse'));
-                if (newIndex < oldIndex) {
-                    newContent.classList.add('reverse');
+                    contentContainer.querySelectorAll('.tab-content').forEach(c => c.classList.remove('reverse'));
+                    if (newIndex < oldIndex) {
+                        newContent.classList.add('reverse');
+                    }
+
+                    if (currentContent) currentContent.classList.remove('active');
+                    if (newContent) newContent.classList.add('active');
+                } else {
+                    // Handle sidebar tabs (Online/Friends)
+                    const allLists = document.querySelectorAll('.users-sidebar .sidebar-list');
+                    allLists.forEach(list => list.style.display = 'none');
+                    const targetList = document.getElementById(tab.dataset.tab);
+                    if (targetList) targetList.style.display = 'flex';
                 }
-
-                currentContent.classList.remove('active');
-                newContent.classList.add('active');
             });
         });
         moveIndicator(tabContainer.querySelector('.active'));
@@ -830,6 +1040,8 @@
     
     function setupCustomSelect() {
         const wrapper = document.querySelector('.custom-select-wrapper');
+        if (!wrapper) return;
+        
         const trigger = wrapper.querySelector('.custom-select-trigger');
         const optionsContainer = wrapper.querySelector('.custom-options');
         
@@ -840,7 +1052,7 @@
         trigger.addEventListener('click', () => optionsContainer.classList.toggle('open'));
         
         optionsContainer.querySelectorAll('.custom-option').forEach(option => {
-                        option.addEventListener('click', () => {
+            option.addEventListener('click', () => {
                 const selected = optionsContainer.querySelector('.selected');
                 if (selected) selected.classList.remove('selected');
                 option.classList.add('selected');
@@ -857,12 +1069,19 @@
         });
     }
 
-    setupTabSlider(elements.sidebarTabs);
-    setupTabSlider(document.querySelector('#room-modal .sidebar-tabs'));
+    // Initialize tabs
+    if (elements.sidebarTabs) {
+        setupTabSlider(elements.sidebarTabs);
+    }
+    const roomModalTabs = document.querySelector('#room-modal .sidebar-tabs');
+    if (roomModalTabs) {
+        setupTabSlider(roomModalTabs);
+    }
     setupCustomSelect();
 
-    // --- INITIALIZATION ---
+    // INITIALIZATION
     ably.connection.on('connected', async () => {
+        console.log('Connected to Ably');
         loadState();
         updateSidebarProfile();
         renderConversations();
@@ -871,19 +1090,31 @@
         globalPresenceChannel = ably.channels.get('global-presence');
         
         globalPresenceChannel.presence.subscribe(['enter', 'leave', 'update'], async () => {
-            const members = await globalPresenceChannel.presence.get();
-            allUsers.clear();
-            members.forEach(m => allUsers.set(m.clientId, m.data));
-            renderUserLists();
+            try {
+                const members = await globalPresenceChannel.presence.get();
+                allUsers.clear();
+                members.forEach(m => {
+                    if (m.data) {
+                        allUsers.set(m.clientId, m.data);
+                    }
+                });
+                renderUserLists();
+            } catch (e) {
+                console.error('Error getting presence:', e);
+            }
         });
 
         globalPresenceChannel.subscribe('room_created', (msg) => {
-            if (!conversations.has(msg.data.id)) {
+            if (msg.data && !conversations.has(msg.data.id)) {
                 conversations.set(msg.data.id, msg.data);
                 saveState();
+                renderConversations();
             }
         });
+        
         globalPresenceChannel.subscribe('request_room_join', (msg) => {
+            if (!msg.data) return;
+            
             for (const conv of conversations.values()) {
                 if (conv.name === msg.data.roomName && conv.isProtected && conv.password === msg.data.roomPass) {
                     globalPresenceChannel.publish(`join_response_${msg.data.requesterId}`, { success: true, roomData: conv });
@@ -891,30 +1122,47 @@
                 }
             }
         });
+        
         globalPresenceChannel.subscribe(`join_response_${currentUser.id}`, (msg) => {
-            if (msg.data.success) {
+            if (!msg.data) return;
+            
+            if (msg.data.success && msg.data.roomData) {
                 if (!conversations.has(msg.data.roomData.id)) {
                     conversations.set(msg.data.roomData.id, msg.data.roomData);
                     saveState();
+                    renderConversations();
                 }
                 switchChannel(msg.data.roomData.id);
                 hideModal(elements.roomModalBackdrop);
+                showToast(`Joined room "${msg.data.roomData.name}"!`, 'success');
             } else {
                 showToast('Room not found or password incorrect.');
             }
         });
 
-        await globalPresenceChannel.presence.enter(currentUser);
-        await switchChannel(localStorage.getItem('nlvx_lastChannel') || 'public-room');
+        try {
+            await globalPresenceChannel.presence.enter(currentUser);
+        } catch (e) {
+            console.error('Error entering global presence:', e);
+        }
+        
+        const lastChannel = localStorage.getItem('nlvx_lastChannel') || 'public-room';
+        await switchChannel(lastChannel);
     });
 
-    ably.connection.on('failed', (err) => console.error('Ably connection failed:', err));
+    ably.connection.on('failed', (err) => {
+        console.error('Ably connection failed:', err);
+        showToast('Connection failed. Please refresh the page.');
+    });
+    
+    ably.connection.on('disconnected', () => {
+        console.log('Disconnected from Ably');
+        showToast('Disconnected. Attempting to reconnect...');
+    });
+
     window.onbeforeunload = () => {
         localStorage.setItem('nlvx_lastChannel', activeChannelId);
-        // Note: Ably automatically handles presence on disconnect/close
     };
-
     </script>
 </body>
 </html>
-
